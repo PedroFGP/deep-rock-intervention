@@ -20,11 +20,31 @@ struct FRotator {
 	float Pitch, Yaw, Roll;
 };
 
+// ScriptStruct CoreUObject.Quat
+// Size: 0x10 (Inherited: 0x00)
+struct FQuat {
+	float X; // 0x00(0x04)
+	float Y; // 0x04(0x04)
+	float Z; // 0x08(0x04)
+	float W; // 0x0c(0x04)
+};
+
 struct FLinearColor {
 	float R, G, B, A;
 	FLinearColor() : R(0.f), G(0.f), B(0.f), A(0.f) {};
 	FLinearColor(float R, float G, float B, float A) : R(R), G(G), B(B), A(A) {};
 };
+
+// ScriptStruct CoreUObject.Transform
+// Size: 0x30 (Inherited: 0x00)
+struct FTransform {
+	struct FQuat Rotation; // 0x00(0x10)
+	struct FVector Translation; // 0x10(0x0c)
+	PAD(0x4); // 0x1c(0x04)
+	struct FVector Scale3D; // 0x20(0x0c)
+	PAD(0x4); // 0x2c(0x04)
+};
+
 
 template<typename T>
 struct TArray {
@@ -239,13 +259,57 @@ struct APawn : AActor {
 
 // Class Engine.PlayerCameraManager
 // Size: 0x2740 (Inherited: 0x220)
-struct APlayerCameraManager : AActor {
+struct APlayerCameraManager : AActor
+{
 	PAD(0x2520); // 0x220
+};
+
+// Class Engine.SkeletalMeshComponent
+// Size: 0xed0 (Inherited: 0x6a0)
+class USkeletalMeshComponent 
+{
+public:
+	PAD(0xA0); // 0x6a0(0xA0)
+	struct TArray<struct FTransform> CachedBoneSpaceTransforms; // 0x740(0x10)
+	struct TArray<struct FTransform> CachedComponentSpaceTransforms; // 0x750(0x10)
+
+	FName GetBoneName(int BoneIndex)
+	{
+		static auto fn = UObject::FindObject<UObject>("Function Engine.SkinnedMeshComponent.GetBoneName");
+		struct
+		{
+			int BoneIndex = 0;
+			FName ReturnValue;
+		} params;
+
+		params.BoneIndex = BoneIndex;
+		ProcessEvent(this, fn, &params);
+		return params.ReturnValue;
+	}
+
+	FTransform K2_GetComponentToWorld() 
+	{
+		static auto fn = UObject::FindObject<UObject>("Function Engine.SceneComponent.K2_GetComponentToWorld");
+		FTransform CompToWorld;
+		ProcessEvent(this, fn, &CompToWorld);
+		return CompToWorld;
+	}
+};
+
+// Class Engine.Character
+// Size: 0x4c0 (Inherited: 0x280)
+class ACharacter : public APawn
+{
+public:
+	struct USkeletalMeshComponent* Mesh; // 0x280(0x08)
+	PAD(0x238); // 0x288(0x238)
 };
 
 // Class Engine.Controller
 // Size: 0x298 (Inherited: 0x220)
-struct AController : AActor {
+class AController : public AActor
+{
+public:
 	PAD(0x8); // 0x220(0x08)
 	struct APlayerState* PlayerState; // 0x228(0x08)
 	PAD(0x20); // 0x230(0x20)
@@ -254,7 +318,7 @@ struct AController : AActor {
 	struct ACharacter* Character; // 0x260(0x08)
 	PAD(0x30); // 0x268(0x30)
 	
-	struct APawn* K2_GetPawn();
+	APawn* K2_GetPawn();
 };
 
 // Class Engine.PlayerController
