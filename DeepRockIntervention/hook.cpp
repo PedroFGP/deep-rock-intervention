@@ -76,7 +76,7 @@ bool CheatInit()
 	auto viewport = engine->GameViewport;
 	if (!viewport) return false;
 
-	auto vtable = viewport->VFTable;
+	auto vtable = viewport->Vtable;
 	if (!vtable) return false;
 
 	Address = vtable + 0x63;

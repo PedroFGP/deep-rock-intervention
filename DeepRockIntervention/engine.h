@@ -84,10 +84,10 @@ struct FNameEntry {
 
 struct FNamePool
 {
-	char Lock[8];
+	BYTE Lock[8];
 	uint32_t CurrentBlock;
 	uint32_t CurrentByteCursor;
-	char* Blocks[8192];
+	BYTE* Blocks[8192];
 
 	FNameEntry* GetEntry(FNameEntryHandle handle) const;
 };
@@ -96,44 +96,106 @@ struct FName {
 	uint32_t Index;
 	uint32_t Number;
 
-	std::string GetName();
+	std::string GetName() const;
 };
 
-struct UObject {
-	void** VFTable;
-	uint32_t ObjectFlags;
-	uint32_t InternalIndex;
-	struct UClass* ClassPrivate;
-	FName NamePrivate;
-	UObject* OuterPrivate;
-
-	std::string GetName();
-	std::string GetFullName();
-	bool IsA(void* cmp);
-	void ProcessEvent(void* fn, void* parms);
-};
-
-struct TUObjectArray {
-	char** Objects;
-	char* PreAllocatedObjects;
+struct TUObjectArray
+{
+	BYTE** Objects;
+	BYTE* PreAllocatedObjects;
 	uint32_t MaxElements;
 	uint32_t NumElements;
 	uint32_t MaxChunks;
 	uint32_t NumChunks;
 
-	UObject* GetObjectPtr(uint32_t id) const;
-	UObject* FindObject(const char* name) const;
+	class UObject* GetByIndex(uint32_t id)
+	{
+		if (id >= NumElements) return nullptr;
+		uint64_t chunkIndex = id / 65536;
+		if (chunkIndex >= NumChunks) return nullptr;
+		auto chunk = Objects[chunkIndex];
+		if (!chunk) return nullptr;
+		uint32_t withinChunkIndex = id % 65536 * 24;
+		auto item = *reinterpret_cast<UObject**>(chunk + withinChunkIndex);
+		return item;
+	}
 };
+
+class UClass;
+class UObject
+{
+public:
+	UObject(UObject* addr) { *this = addr; }
+	static inline TUObjectArray* GObjects = nullptr;
+	void** Vtable; // 0x0
+	uint32_t ObjectFlags; // 0x8
+	uint32_t InternalIndex; // 0xC
+	UClass* Class; // 0x10
+	FName Name; // 0x18
+	UObject* Outer; // 0x20
+
+	std::string GetName() const;
+
+	std::string GetFullName() const;
+
+	template<typename T>
+	static T* FindObject(const std::string& name)
+	{
+		for (int i = 0; i < GObjects->NumElements; ++i)
+		{
+			auto object = GObjects->GetByIndex(i);
+
+			if (object == nullptr)
+			{
+				continue;
+			}
+
+			if (object->GetFullName() == name)
+			{
+				return static_cast<T*>(object);
+			}
+		}
+		return nullptr;
+	}
+
+	static UClass* FindClass(const std::string& name)
+	{
+		return FindObject<UClass>(name);
+	}
+
+	template<typename T>
+	static T* GetObjectCasted(uint32_t index)
+	{
+		return static_cast<T*>(GObjects->GetByIndex(index));
+	}
+
+	bool IsA(UClass* cmp) const;
+
+	static UClass* StaticClass()
+	{
+		static auto ptr = UObject::FindObject<UClass>("Class CoreUObject.Object");
+		return ptr;
+	}
+};
+
+inline void ProcessEvent(void* obj, void* function, void* parms)
+{
+	auto vtable = *reinterpret_cast<void***>(obj);
+	reinterpret_cast<void(*)(void*, void*, void*)>(vtable[68])(obj, function, parms);
+}
 
 // Class CoreUObject.Field
 // Size: 0x30 (Inherited: 0x28)
-struct UField : UObject {
-	PAD(0x8); // 0x28(0x08)
+class UField : public UObject
+{
+public:
+	UField* Next;
 };
 
 // Class CoreUObject.Struct
 // Size: 0xb0 (Inherited: 0x30)
-struct UStruct : UField {
+class UStruct : public UField {
+public:
 	PAD(0x10); // 0x30(0x10)
 	UStruct* SuperStruct; // 0x40(0x8)
 	PAD(0x68); // 0x48(0x80)
@@ -141,7 +203,7 @@ struct UStruct : UField {
 
 // Class CoreUObject.Class
 // Size: 0x230 (Inherited: 0xb0)
-struct UClass : UStruct {
+struct UClass : public UStruct {
 	PAD(0x180); // 0xb0(0x180)
 };
 
