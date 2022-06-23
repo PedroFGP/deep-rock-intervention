@@ -1,0 +1,36 @@
+-- UCanvas::PostRender vtable index
+
+.text:00000000031DB9EF 33 D2                                                           xor     edx, edx
+.text:00000000031DB9F1 49 8B CD                                                        mov     rcx, r13
+.text:00000000031DB9F4 E8 77 A9 45 00                                                  call    sub_3636370
+.text:00000000031DB9F9 48 8B 7D F0                                                     mov     rdi, [rbp+410h+var_420]
+.text:00000000031DB9FD 48 8D 8F 80 02 00 00                                            lea     rcx, [rdi+280h]
+.text:00000000031DBA04 E8 77 78 64 FD                                                  call    sub_823280
+.text:00000000031DBA09 48 8B 47 D8                                                     mov     rax, [rdi-28h]
+.text:00000000031DBA0D 48 8D 4F D8                                                     lea     rcx, [rdi-28h]
+.text:00000000031DBA11 48 8B 75 A8                                                     mov     rsi, [rbp+410h+var_468]
+.text:00000000031DBA15 48 8B D6                                                        mov     rdx, rsi
+.text:00000000031DBA18 FF 90 18 03 00 00                                               call    qword ptr [rax+318h] 									<----------------------------------------
+.text:00000000031DBA1E 48 8D 0D 07 52 38 01                                            lea     rcx, aUi_0      ; "UI"									<-- String reference to look for...
+.text:00000000031DBA25 E8 96 B3 60 FE                                                  call    sub_17E6DC0
+.text:00000000031DBA2A EB 04                                                           jmp     short loc_31DBA30
+
+-- UObject::ProcessEvent vtable index ("FRepLayout::CallRepNotifies: Called with invalid pr")
+
+.text:00000000034A3F11 48 8D 05 C8 F3 86 01                                            lea     rax, aFreplayoutCall_1 ; "FRepLayout::CallRepNotifies: Can't find"...	<-- String reference to look for...
+.text:00000000034A3F18 33 C9                                                           xor     ecx, ecx        ; int
+.text:00000000034A3F1A 48 89 44 24 20                                                  mov     [rsp+170h+Format], rax ; Format
+.text:00000000034A3F1F E8 EC 8D 2C FE                                                  call    sub_176CD10
+.text:00000000034A3F24 48 8B 4D 28                                                     mov     rcx, [rbp+70h+var_48]
+.text:00000000034A3F28 48 85 C9                                                        test    rcx, rcx
+.text:00000000034A3F2B 74 05                                                           jz      short loc_34A3F32
+.text:00000000034A3F2D E8 6E 97 25 FE                                                  call    sub_16FD6A0
+......
+.text:00000000034A4230 49 8B 06                                                        mov     rax, [r14]
+.text:00000000034A4233 4D 8B C4                                                        mov     r8, r12
+.text:00000000034A4236 49 8B D7                                                        mov     rdx, r15
+.text:00000000034A4239 49 8B CE                                                        mov     rcx, r14
+.text:00000000034A423C FF 90 20 02 00 00                                               call    qword ptr [rax+220h]									<----------------------------------------
+.text:00000000034A4242 80 7C 24 70 00                                                  cmp     [rsp+170h+var_100], 0
+.text:00000000034A4247 0F 85 86 00 00 00                                               jnz     loc_34A42D3
+.text:00000000034A424D 48 8B 44 24 58                                                  mov     rax, [rsp+170h+var_118]

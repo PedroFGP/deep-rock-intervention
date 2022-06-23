@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+/x64/Debug
+/DeepRockIntervention/x64/Debug
+/.vs/DeepRockIntervention/v17
