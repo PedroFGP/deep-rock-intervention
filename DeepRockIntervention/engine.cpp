@@ -56,62 +56,6 @@ bool UObject::IsA(UClass* cmp) const
 	return false;
 }
 
-void UCanvas::K2_DrawText(struct UFont* RenderFont, struct FString RenderText, struct FVector2D ScreenPosition, struct FVector2D Scale, struct FLinearColor RenderColor, float Kerning, struct FLinearColor ShadowColor, struct FVector2D ShadowOffset, bool bCentreX, bool bCentreY, bool bOutlined, struct FLinearColor OutlineColor)
-{
-	static auto fn = UObject::FindObject<UObject>("Function Engine.Canvas.K2_DrawText");
-	struct {
-		void* RenderFont;
-		FString RenderText;
-		FVector2D ScreenPosition;
-		FVector2D Scale;
-		FLinearColor RenderColor;
-		float Kerning;
-		FLinearColor ShadowColor;
-		FVector2D ShadowOffset;
-		bool bCentreX;
-		bool bCentreY;
-		bool bOutlined;
-		FLinearColor OutlineColor;
-	} parms;
-	parms = { RenderFont , RenderText, ScreenPosition, Scale, RenderColor, Kerning, ShadowColor, ShadowOffset, bCentreX, bCentreY, bOutlined, OutlineColor };
-	ProcessEvent(this, fn, &parms);
-}
-
-FVector AActor::K2_GetActorLocation()
-{
-	static auto fn = UObject::FindObject<UObject>("Function Engine.Actor.K2_GetActorLocation");
-	struct {
-		FVector ReturnValue;
-	} parms;
-	ProcessEvent(this, fn, &parms);
-	return parms.ReturnValue;
-}
-
-APawn* AController::K2_GetPawn()
-{
-	static auto fn = UObject::FindObject<UObject>("Function Engine.Controller.K2_GetPawn");
-	struct {
-		APawn* ReturnValue;
-	} parms;
-	ProcessEvent(this, fn, &parms);
-	return parms.ReturnValue;
-}
-
-bool APlayerController::ProjectWorldLocationToScreen(FVector& WorldLocation, FVector2D& ScreenLocation, bool bPlayerViewportRelative)
-{
-	static auto fn = UObject::FindObject<UObject>("Function Engine.PlayerController.ProjectWorldLocationToScreen");
-	struct {
-		FVector WorldLocation;
-		FVector2D ScreenLocation;
-		bool bPlayerViewportRelative;
-		bool ReturnValue;
-	} parms;
-	parms = { WorldLocation, ScreenLocation, bPlayerViewportRelative };
-	ProcessEvent(this, fn, &parms);
-	ScreenLocation = parms.ScreenLocation;
-	return parms.ReturnValue;
-}
-
 bool EngineInit()
 {
 	auto main = GetModuleHandleA(nullptr);

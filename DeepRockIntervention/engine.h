@@ -1,7 +1,9 @@
 #pragma once
 #include "pch.h"
 
-struct FVector {
+class FVector 
+{
+public:
 	float X, Y, Z;
 
 	FVector() : X(0.f), Y(0.f), Z(0.f) {}
@@ -12,24 +14,32 @@ struct FVector {
 	FVector operator-(const FVector& other) const { return FVector(X - other.X, Y - other.Y, Z - other.Z); }
 };
 
-struct FVector2D {
+class FVector2D 
+{
+public:
 	float X, Y;
 };
 
-struct FRotator {
+class FRotator 
+{
+public:
 	float Pitch, Yaw, Roll;
 };
 
 // ScriptStruct CoreUObject.Quat
 // Size: 0x10 (Inherited: 0x00)
-struct FQuat {
+class FQuat
+{
+public:
 	float X; // 0x00(0x04)
 	float Y; // 0x04(0x04)
 	float Z; // 0x08(0x04)
 	float W; // 0x0c(0x04)
 };
 
-struct FLinearColor {
+class FLinearColor 
+{
+public:
 	float R, G, B, A;
 	FLinearColor() : R(0.f), G(0.f), B(0.f), A(0.f) {};
 	FLinearColor(float R, float G, float B, float A) : R(R), G(G), B(B), A(A) {};
@@ -37,23 +47,28 @@ struct FLinearColor {
 
 // ScriptStruct CoreUObject.Transform
 // Size: 0x30 (Inherited: 0x00)
-struct FTransform {
-	struct FQuat Rotation; // 0x00(0x10)
-	struct FVector Translation; // 0x10(0x0c)
+class FTransform
+{
+public:
+	FQuat Rotation; // 0x00(0x10)
+	FVector Translation; // 0x10(0x0c)
 	PAD(0x4); // 0x1c(0x04)
-	struct FVector Scale3D; // 0x20(0x0c)
+	class FVector Scale3D; // 0x20(0x0c)
 	PAD(0x4); // 0x2c(0x04)
 };
 
 
 template<typename T>
-struct TArray {
+struct TArray 
+{
 	T* Data;
 	int Count;
 	int Size;
 };
 
-struct FString : TArray<wchar_t> {
+class FString : public TArray<wchar_t> 
+{
+public:
 
 	inline FString()
 	{
@@ -80,7 +95,10 @@ struct FString : TArray<wchar_t> {
 	}
 };
 
-struct FNameEntryHandle {
+class FNameEntryHandle 
+{
+public:
+
 	uint32_t Block = 0;
 	uint32_t Offset = 0;
 
@@ -89,7 +107,10 @@ struct FNameEntryHandle {
 	operator uint32_t() const { return (Block << 16 | Offset); }
 };
 
-struct FNameEntry {
+class FNameEntry 
+{
+public:
+
 	uint16_t bIsWide : 1;
 	uint16_t LowercaseProbeHash : 5;
 	uint16_t Len : 10;
@@ -102,8 +123,9 @@ struct FNameEntry {
 	std::string String();
 };
 
-struct FNamePool
+class FNamePool
 {
+public:
 	BYTE Lock[8];
 	uint32_t CurrentBlock;
 	uint32_t CurrentByteCursor;
@@ -112,15 +134,20 @@ struct FNamePool
 	FNameEntry* GetEntry(FNameEntryHandle handle) const;
 };
 
-struct FName {
+class FName 
+{
+public:
+
 	uint32_t Index;
 	uint32_t Number;
 
 	std::string GetName() const;
 };
 
-struct TUObjectArray
+class TUObjectArray
 {
+public:
+
 	BYTE** Objects;
 	BYTE* PreAllocatedObjects;
 	uint32_t MaxElements;
@@ -193,7 +220,13 @@ public:
 
 	static UClass* StaticClass()
 	{
-		static auto ptr = UObject::FindObject<UClass>("Class CoreUObject.Object");
+		static UClass* ptr = 0;
+
+		if (!ptr) 
+		{
+			ptr = UObject::FindObject<UClass>("Class CoreUObject.Object");
+		}
+
 		return ptr;
 	}
 };
@@ -214,7 +247,8 @@ public:
 
 // Class CoreUObject.Struct
 // Size: 0xb0 (Inherited: 0x30)
-class UStruct : public UField {
+class UStruct : public UField 
+{
 public:
 	PAD(0x10); // 0x30(0x10)
 	UStruct* SuperStruct; // 0x40(0x8)
@@ -223,44 +257,181 @@ public:
 
 // Class CoreUObject.Class
 // Size: 0x230 (Inherited: 0xb0)
-struct UClass : public UStruct {
+class UClass : public UStruct 
+{
+public:
 	PAD(0x180); // 0xb0(0x180)
 };
 
 // Class Engine.Canvas
 // Size: 0x2d0 (Inherited: 0x28)
-struct UCanvas : UObject {
+class UCanvas : public UObject 
+{
+public:
 	PAD(0x2A8); // 0x28(0x2A8)
 
 	struct FVector2D K2_TextSize(struct UFont* RenderFont, struct FString RenderText, struct FVector2D Scale); // Function Engine.Canvas.K2_TextSize
 	struct FVector2D K2_StrLen(struct UFont* RenderFont, struct FString RenderText); // Function Engine.Canvas.K2_StrLen
-	void K2_DrawText(struct UFont* RenderFont, struct FString RenderText, struct FVector2D ScreenPosition, struct FVector2D Scale, struct FLinearColor RenderColor, float Kerning, struct FLinearColor ShadowColor, struct FVector2D ShadowOffset, bool bCentreX, bool bCentreY, bool bOutlined, struct FLinearColor OutlineColor); // Function Engine.Canvas.K2_DrawText
+	void K2_DrawText(struct UFont* RenderFont, struct FString RenderText, struct FVector2D ScreenPosition, struct FVector2D Scale, struct FLinearColor RenderColor, float Kerning, struct FLinearColor ShadowColor, struct FVector2D ShadowOffset, bool bCentreX, bool bCentreY, bool bOutlined, struct FLinearColor OutlineColor)
+	{
+		static auto fn = UObject::FindObject<UObject>("Function Engine.Canvas.K2_DrawText");
+
+		struct {
+			void* RenderFont;
+			FString RenderText;
+			FVector2D ScreenPosition;
+			FVector2D Scale;
+			FLinearColor RenderColor;
+			float Kerning;
+			FLinearColor ShadowColor;
+			FVector2D ShadowOffset;
+			bool bCentreX;
+			bool bCentreY;
+			bool bOutlined;
+			FLinearColor OutlineColor;
+		} parms;
+
+		parms = { RenderFont , RenderText, ScreenPosition, Scale, RenderColor, Kerning, ShadowColor, ShadowOffset, bCentreX, bCentreY, bOutlined, OutlineColor };
+
+		ProcessEvent(this, fn, &parms);
+	};
 };
 
 // Class Engine.Actor
 // Size: 0x220 (Inherited: 0x28)
-struct AActor : UObject {
+class AActor : public UObject 
+{
+public:
 	PAD(0x1F8); // 0x28(0x1F8)
 
-	struct FRotator K2_GetActorRotation(); // Function Engine.Actor.K2_GetActorRotation
-	struct FVector K2_GetActorLocation(); // Function Engine.Actor.K2_GetActorLocation
+	struct FRotator K2_GetActorRotation() 
+	{
+		static auto fn = UObject::FindObject<UObject>("Function Engine.Actor.K2_GetActorRotation");
+
+		FRotator rotation;
+		ProcessEvent(this, fn, &rotation);
+
+		return rotation;
+	};
+
+	struct FVector K2_GetActorLocation()
+	{
+		static auto fn = UObject::FindObject<UObject>("Function Engine.Actor.K2_GetActorLocation");
+
+		FVector location;
+		ProcessEvent(this, fn, &location);
+
+		return location;
+	}
 };
 
 // Class Engine.Pawn
 // Size: 0x280 (Inherited: 0x220)
-struct APawn : AActor {
+class APawn : public AActor 
+{
+public:
 	PAD(0x20); // 0x220(0x20)
-	struct APlayerState* PlayerState; // 0x240(0x08)
+	class APlayerState* PlayerState; // 0x240(0x08)
 	PAD(0x08); // 0x248(0x08)
-	struct AController* LastHitBy; // 0x250(0x08)
-	struct AController* Controller; // 0x258(0x08)
+	class AController* LastHitBy; // 0x250(0x08)
+	class AController* Controller; // 0x258(0x08)
 	PAD(0x20); // 0x260(0x20)
+};
+
+// Class Engine.ActorComponent
+// Size: 0xb0 (Inherited: 0x28)
+class UActorComponent : public UObject
+{
+public:
+	PAD(0xB0); // 0x28(0xb0)
+};
+
+// Class FSD.CharacterRecoilComponent
+// Size: 0xe0 (Inherited: 0xb0)
+class UCharacterRecoilComponent : public UActorComponent
+{
+public:
+	struct FVector Recoil; // 0xb0(0x0c)
+	struct FVector RecoilVelocity; // 0xbc(0x0c)
+	struct FVector PrevError; // 0xc8(0x0c)
+	PAD(0x0C); // 0xd4(0x0c)
+};
+
+// Class FSD.HealthComponentBase
+// Size: 0x150 (Inherited: 0xb0)
+class UHealthComponentBase : public UActorComponent 
+{
+public:
+	PAD(0x50); // 0xb0(0x50)
+
+	bool IsAlive()
+	{
+		static auto fn = UObject::FindObject<UObject>("Function FSD.HealthComponentBase.IsAlive");
+		bool isAlive = true;
+		ProcessEvent(this, fn, &isAlive);
+		return isAlive;
+	}
+
+	float GetHealth()
+	{
+		static auto fn = UObject::FindObject<UObject>("Function FSD.HealthComponentBase.GetHealth");
+		float health = 0.0f;
+		ProcessEvent(this, fn, &health);
+		return health;
+	}
+};
+
+// Class FSD.HealthComponent
+// Size: 0x250 (Inherited: 0x150)
+class UHealthComponent : public UHealthComponentBase 
+{
+public:
+	PAD(0x50); // 0x150(0x50)
+	float Damage; // 0x1a0(0x04)
+	PAD(0xAC); // 0x1a4(0xAC)
+};
+
+// Class FSD.PlayerHealthComponent
+// Size: 0x390 (Inherited: 0x250)
+class UPlayerHealthComponent : public UHealthComponent 
+{
+public:
+	PAD(0x58); // 0x250(0x58)
+	float MaxHealth; // 0x2a8(0x04)
+	float MaxArmor; // 0x2ac(0x04)
+	float ArmorDamage; // 0x2b0(0x04)
+	PAD(0xDC); // 0x2B4(0xDC)
+};
+
+// Class Engine.Character
+// Size: 0x4c0 (Inherited: 0x280)
+class ACharacter : public APawn
+{
+public:
+	class USkeletalMeshComponent* Mesh; // 0x280(0x08)
+	PAD(0x238); // 0x288(0x238)
+};
+
+
+// Class FSD.PlayerCharacter
+// Size: 0xe10 (Inherited: 0x4c0)
+class APlayerCharacter : public ACharacter 
+{
+public:
+	PAD(0x578); // 0x4c0(0x578)
+	struct USkeletalMeshComponent* FPMesh; // 0xa38(0x08)
+	PAD(0x60); // 0xa40(0x60)
+	struct UPlayerHealthComponent* HealthComponent; // 0xaa0(0x08)
+	PAD(0x28); // 0xaa8(0x28)
+	struct UCharacterRecoilComponent* RecoilComponent; // 0xad0(0x08)
+	PAD(0x338); // 0xad8(0x338)
 };
 
 // Class Engine.PlayerCameraManager
 // Size: 0x2740 (Inherited: 0x220)
-struct APlayerCameraManager : AActor
+class APlayerCameraManager : public AActor
 {
+public:
 	PAD(0x2520); // 0x220
 };
 
@@ -296,15 +467,6 @@ public:
 	}
 };
 
-// Class Engine.Character
-// Size: 0x4c0 (Inherited: 0x280)
-class ACharacter : public APawn
-{
-public:
-	struct USkeletalMeshComponent* Mesh; // 0x280(0x08)
-	PAD(0x238); // 0x288(0x238)
-};
-
 // Class Engine.Controller
 // Size: 0x298 (Inherited: 0x220)
 class AController : public AActor
@@ -318,28 +480,58 @@ public:
 	struct ACharacter* Character; // 0x260(0x08)
 	PAD(0x30); // 0x268(0x30)
 	
-	APawn* K2_GetPawn();
+	APawn* K2_GetPawn()
+	{
+		static auto fn = UObject::FindObject<UObject>("Function Engine.Controller.K2_GetPawn");
+
+		APawn* pawn;
+		ProcessEvent(this, fn, &pawn);
+
+		return pawn;
+	}
 };
 
 // Class Engine.PlayerController
 // Size: 0x570 (Inherited: 0x298)
-struct APlayerController : AController {
+class APlayerController : public AController
+{
+public:
 	PAD(0x20); // 0x298(0x08)
 	struct APlayerCameraManager* PlayerCameraManager; // 0x2b8(0x08)
 
-	bool ProjectWorldLocationToScreen(struct FVector& WorldLocation, struct FVector2D& ScreenLocation, bool bPlayerViewportRelative); // Function Engine.PlayerController.ProjectWorldLocationToScreen
+	bool ProjectWorldLocationToScreen(struct FVector& WorldLocation, struct FVector2D& ScreenLocation, bool bPlayerViewportRelative)
+	{
+		static auto fn = UObject::FindObject<UObject>("Function Engine.PlayerController.ProjectWorldLocationToScreen");
+
+		struct {
+			FVector WorldLocation;
+			FVector2D ScreenLocation;
+			bool bPlayerViewportRelative;
+			bool ReturnValue;
+		} parms;
+
+		parms = { WorldLocation, ScreenLocation, bPlayerViewportRelative };
+		ProcessEvent(this, fn, &parms);
+
+		ScreenLocation = parms.ScreenLocation;
+		return parms.ReturnValue;
+	};
 };
 
 // Class Engine.Player
 // Size: 0x48 (Inherited: 0x28)
-struct UPlayer : UObject {
+class UPlayer : public UObject 
+{
+public:
 	PAD(0x8); // 0x28(0x08)
 	struct APlayerController* PlayerController; // 0x30(0x08)
 };
 
 // Class Engine.PlayerState
 // Size: 0x320 (Inherited: 0x220)
-struct APlayerState : AActor {
+class APlayerState : public AActor 
+{
+public:
 	PAD(0x60); // 0x220(0x04)
 	struct APawn* PawnPrivate; // 0x280(0x08)
 	PAD(0x78); // 0x288
@@ -348,27 +540,35 @@ struct APlayerState : AActor {
 
 // Class Engine.GameStateBase
 // Size: 0x270 (Inherited: 0x220)
-struct AGameStateBase : AActor {
+class AGameStateBase : public AActor 
+{
+public:
 	PAD(0x18); // 0x220
 	struct TArray<struct APlayerState*> PlayerArray; // 0x238(0x10)
 };
 
 // Class Engine.GameInstance
 // Size: 0x198 (Inherited: 0x28)
-struct UGameInstance : UObject {
+class UGameInstance : public UObject
+{
+public:
 	PAD(0x10); // 0x28(0x10)
 	struct TArray<struct UPlayer*> LocalPlayers; // 0x38(0x10)
 };
 
 // Class Engine.LevelActorContainer
 // Size: 0x38 (Inherited: 0x28)
-struct ULevelActorContainer : UObject {
+class ULevelActorContainer : public UObject 
+{
+public:
 	struct TArray<struct AActor*> Actors; // 0x28(0x10)
 };
 
 // Class Engine.Level
 // Size: 0x298 (Inherited: 0x28)
-struct ULevel : UObject {
+class ULevel : public UObject
+{
+public:
 	PAD(0x90); // 0x28(0x90)
 	struct UWorld* OwningWorld; // 0xb8(0x08)
 	PAD(0x18); // 0xC0(0x18)
@@ -378,7 +578,9 @@ struct ULevel : UObject {
 
 // Class Engine.World
 // Size: 0x710 (Inherited: 0x28)
-struct UWorld : UObject {
+class UWorld : public UObject 
+{
+public:
 	PAD(0x8); // 0x28(0x08)
 	struct ULevel* PersistentLevel; // 0x30(0x08)
 	PAD(0xE8); // 0x38(0xE8)
@@ -390,13 +592,17 @@ struct UWorld : UObject {
 
 // Class Engine.ScriptViewportClient
 // Size: 0x38 (Inherited: 0x28)
-struct UScriptViewportClient : UObject {
+class UScriptViewportClient : public UObject 
+{
+public:
 	PAD(0x10); // 0x28(0x10)
 };
 
 // Class Engine.GameViewportClient
 // Size: 0x330 (Inherited: 0x38)
-struct UGameViewportClient : UScriptViewportClient {
+class UGameViewportClient : public UScriptViewportClient
+{
+public:
 	PAD(0x40); // 0x38(0x08)
 	struct UWorld* World; // 0x78(0x08)
 	struct UGameInstance* GameInstance; // 0x80(0x08)
@@ -405,7 +611,9 @@ struct UGameViewportClient : UScriptViewportClient {
 
 // Class Engine.Engine
 // Size: 0xde0 (Inherited: 0x28)
-struct UEngine : UObject {
+class UEngine : public UObject
+{
+public:
 	PAD(0x8); // 0x28(0x08)
 	struct UFont* TinyFont; // 0x30(0x08)
 	PAD(0x18); // 0x38(0x18)
@@ -422,7 +630,9 @@ struct UEngine : UObject {
 
 // Class Engine.GameplayStatics
 // Size: 0x28 (Inherited: 0x28)
-struct UGameplayStatics : UObject {
+class UGameplayStatics : public UObject 
+{
+public:
 
 	void GetAllActorsOfClass(struct UObject* WorldContextObject, struct UClass* ActorClass, struct TArray<struct AActor*>* OutActors); // Function Engine.GameplayStatics.GetAllActorsOfClass // (Final|Native|Static|Public|HasOutParms|BlueprintCallable) // @ game+0x36eb890
 };
