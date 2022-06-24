@@ -18,7 +18,13 @@ class FVector2D
 {
 public:
 	float X, Y;
+
+	FVector2D() : X(0.f), Y(0.f) {}
+	FVector2D(float X, float Y) : X(X), Y(Y) {}
 };
+
+const FVector2D ZeroVector(0.0f, 0.0f);
+const FVector2D OneVector(1.0f, 1.0f);
 
 class FRotator 
 {
@@ -237,6 +243,18 @@ inline void ProcessEvent(void* obj, void* function, void* parms)
 	reinterpret_cast<void(*)(void*, void*, void*)>(vtable[68])(obj, function, parms);
 }
 
+// Enum Engine.EBlendMode
+enum EBlendMode : uint8_t {
+	BLEND_Opaque = 0,
+	BLEND_Masked = 1,
+	BLEND_Translucent = 2,
+	BLEND_Additive = 3,
+	BLEND_Modulate = 4,
+	BLEND_AlphaComposite = 5,
+	BLEND_AlphaHoldout = 6,
+	BLEND_MAX = 7
+};
+
 // Class CoreUObject.Field
 // Size: 0x30 (Inherited: 0x28)
 class UField : public UObject
@@ -268,16 +286,105 @@ public:
 class UCanvas : public UObject 
 {
 public:
-	PAD(0x2A8); // 0x28(0x2A8)
+	PAD(0x38); // 0x28(0x38)
+	void* DefaultTexture; // 0x60(0x08)
+	PAD(0x268); // 0x68(0x268)
 
-	struct FVector2D K2_TextSize(struct UFont* RenderFont, struct FString RenderText, struct FVector2D Scale); // Function Engine.Canvas.K2_TextSize
-	struct FVector2D K2_StrLen(struct UFont* RenderFont, struct FString RenderText); // Function Engine.Canvas.K2_StrLen
+	void K2_DrawPolygon(struct FVector2D ScreenPosition, struct FVector2D Radius, int32_t NumberOfSides, struct FLinearColor RenderColor)
+	{
+		static auto fn = UObject::FindObject<UObject>("Function Engine.Canvas.K2_DrawPolygon");
+
+		struct {
+			void* RenderTexture;
+			FVector2D ScreenPosition;
+			FVector2D Radius;
+			int32_t NumberOfSides;
+			FLinearColor RenderColor;
+		} parms;
+
+		parms = { this->DefaultTexture, ScreenPosition, Radius, NumberOfSides,RenderColor };
+
+		ProcessEvent(this, fn, &parms);
+	}
+
+	void K2_DrawTexture(struct FVector2D ScreenPosition, struct FVector2D ScreenSize, struct FLinearColor RenderColor) 
+	{
+		static auto fn = UObject::FindObject<UObject>("Function Engine.Canvas.K2_DrawTexture");
+
+		struct {
+			void* RenderTexture;
+			FVector2D ScreenPosition;
+			FVector2D ScreenSize;
+			FVector2D CoordinatePosition;
+			FVector2D CoordinateSize;
+			FLinearColor RenderColor;
+			EBlendMode BlendMode;
+			float Rotation;
+			FVector2D PivotPoint;
+		} parms;
+
+		parms = { this->DefaultTexture, ScreenPosition, ScreenSize, ZeroVector, OneVector, RenderColor, EBlendMode::BLEND_MAX, 0.0f, ZeroVector };
+
+		ProcessEvent(this, fn, &parms);
+	}
+
+	void K2_DrawLine(struct FVector2D ScreenPositionA, struct FVector2D ScreenPositionB, float Thickness, struct FLinearColor RenderColor)
+	{
+		static auto fn = UObject::FindObject<UObject>("Function Engine.Canvas.K2_DrawLine");
+
+		struct {
+			FVector2D ScreenPositionA;
+			FVector2D ScreenPositionB;
+			float Thickness;
+			FLinearColor RenderColor;
+		} parms;
+
+		parms = { ScreenPositionA , ScreenPositionB, Thickness, RenderColor };
+
+		ProcessEvent(this, fn, &parms);
+	}
+
+	void K2_DrawBox(struct FVector2D ScreenPosition, struct FVector2D ScreenSize, float Thickness, struct FLinearColor RenderColor)
+	{
+		static auto fn = UObject::FindObject<UObject>("Function Engine.Canvas.K2_DrawBox");
+
+		struct {
+			FVector2D ScreenPosition;
+			FVector2D ScreenSize;
+			float Thickness;
+			FLinearColor RenderColor;
+		} parms;
+
+		parms = { ScreenPosition , ScreenSize, Thickness, RenderColor };
+
+		ProcessEvent(this, fn, &parms);
+	}
+
+	FVector2D K2_TextSize(struct UFont* RenderFont, struct FString RenderText, struct FVector2D Scale)
+	{
+		static auto fn = UObject::FindObject<UObject>("Function Engine.Canvas.K2_TextSize");
+
+		struct {
+			UFont* RenderFont;
+			FString RenderText;
+			FVector2D Scale;
+			FVector2D ReturnValue;
+		} parms;
+
+		parms = { RenderFont , RenderText, Scale };
+
+		ProcessEvent(this, fn, &parms);
+
+		return parms.ReturnValue;
+	}
+
+
 	void K2_DrawText(struct UFont* RenderFont, struct FString RenderText, struct FVector2D ScreenPosition, struct FVector2D Scale, struct FLinearColor RenderColor, float Kerning, struct FLinearColor ShadowColor, struct FVector2D ShadowOffset, bool bCentreX, bool bCentreY, bool bOutlined, struct FLinearColor OutlineColor)
 	{
 		static auto fn = UObject::FindObject<UObject>("Function Engine.Canvas.K2_DrawText");
 
 		struct {
-			void* RenderFont;
+			UFont* RenderFont;
 			FString RenderText;
 			FVector2D ScreenPosition;
 			FVector2D Scale;
@@ -379,6 +486,15 @@ public:
 		ProcessEvent(this, fn, &health);
 		return health;
 	}
+
+
+	float GetHealthPct()
+	{
+		static auto fn = UObject::FindObject<UObject>("Function FSD.HealthComponentBase.GetHealthPct");
+		float health = 0.0f;
+		ProcessEvent(this, fn, &health);
+		return health;
+	}
 };
 
 // Class FSD.HealthComponent
@@ -389,6 +505,14 @@ public:
 	PAD(0x50); // 0x150(0x50)
 	float Damage; // 0x1a0(0x04)
 	PAD(0xAC); // 0x1a4(0xAC)
+
+	float GetArmorPct()
+	{
+		static auto fn = UObject::FindObject<UObject>("Function FSD.HealthComponent.GetArmorPct");
+		float armorPct = 0.0f;
+		ProcessEvent(this, fn, &armorPct);
+		return armorPct;
+	}
 };
 
 // Class FSD.PlayerHealthComponent
@@ -425,6 +549,18 @@ public:
 	PAD(0x28); // 0xaa8(0x28)
 	struct UCharacterRecoilComponent* RecoilComponent; // 0xad0(0x08)
 	PAD(0x338); // 0xad8(0x338)
+
+	static UClass* StaticClass()
+	{
+		static UClass* ptr = 0;
+
+		if (!ptr)
+		{
+			ptr = UObject::FindObject<UClass>("Class FSD.PlayerCharacter");
+		}
+
+		return ptr;
+	}
 };
 
 // Class Engine.PlayerCameraManager
@@ -440,7 +576,7 @@ public:
 class USkeletalMeshComponent 
 {
 public:
-	PAD(0xA0); // 0x6a0(0xA0)
+	PAD(0x740); // 0x0(0x740)
 	struct TArray<struct FTransform> CachedBoneSpaceTransforms; // 0x740(0x10)
 	struct TArray<struct FTransform> CachedComponentSpaceTransforms; // 0x750(0x10)
 
