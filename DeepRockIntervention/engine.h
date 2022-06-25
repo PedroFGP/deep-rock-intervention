@@ -64,6 +64,7 @@ public:
 };
 
 
+
 template<typename T>
 struct TArray 
 {
@@ -99,6 +100,13 @@ public:
 	{
 		return Data;
 	}
+};
+
+class FText
+{
+public:
+	FString* Text;
+	PAD(0x10);
 };
 
 class FNameEntryHandle 
@@ -430,6 +438,18 @@ public:
 
 		return location;
 	}
+
+	static UClass* StaticClass()
+	{
+		static UClass* ptr = 0;
+
+		if (!ptr)
+		{
+			ptr = UObject::FindObject<UClass>("Class Engine.Actor");
+		}
+
+		return ptr;
+	}
 };
 
 // Class Engine.Pawn
@@ -443,6 +463,34 @@ public:
 	class AController* LastHitBy; // 0x250(0x08)
 	class AController* Controller; // 0x258(0x08)
 	PAD(0x20); // 0x260(0x20)
+
+	static UClass* StaticClass()
+	{
+		static UClass* ptr = 0;
+
+		if (!ptr)
+		{
+			ptr = UObject::FindObject<UClass>("Class Engine.Pawn");
+		}
+
+		return ptr;
+	}
+};
+
+// Class FSD.FSDPawn
+// Size: 0x2f8 (Inherited: 0x280)
+class AFSDPawn : public APawn 
+{
+public:
+	PAD(0x78); // 0x280(0x78)
+
+	struct UHealthComponentBase* GetHealthComponent() 
+	{
+		static auto fn = UObject::FindObject<UObject>("Function FSD.FSDPawn.GetHealthComponent");
+		UHealthComponentBase* health;
+		ProcessEvent(this, fn, &health);
+		return health;
+	}
 };
 
 // Class Engine.ActorComponent
@@ -512,6 +560,104 @@ public:
 		float armorPct = 0.0f;
 		ProcessEvent(this, fn, &armorPct);
 		return armorPct;
+	}
+};
+
+// Class FSD.EnemyHealthComponent
+// Size: 0x288 (Inherited: 0x250)
+class UEnemyHealthComponent : public UHealthComponent
+{
+public:
+	PAD(0x10); // 0x250(0x0c)
+	float Courage; // 0x260(0x04)
+	float MaxHealth; // 0x264(0x04)
+	PAD(0x20); // 0x268(0x20)
+};
+
+// Class FSD.EnemyFamily
+// Size: 0x50 (Inherited: 0x30)
+class UEnemyFamily
+{
+public:
+	PAD(0x30); // 0x00(0x30)
+	void* Icon; // 0x30(0x08)
+	struct FText Name; // 0x38(0x18)
+};
+
+// Class FSD.SimpleObjectInfoComponent
+// Size: 0x170 (Inherited: 0xb0)
+class USimpleObjectInfoComponent
+{
+public:
+	PAD(0xB0); // 0x00(0xb0)
+	struct FText InGameName; // 0xb0(0x18)
+	struct FText InGameDescription; // 0xc8(0x18)
+};
+
+// Class FSD.EnemyComponent
+// Size: 0x1a8 (Inherited: 0x170)
+class UEnemyComponent : public USimpleObjectInfoComponent 
+{
+public:
+	struct UEnemyFamily* Family; // 0x170(0x08)
+	PAD(0x10); // 0x178(0x10)
+	struct FString mixerName; // 0x188(0x10)
+	PAD(0x10); // 0x198(0x10)
+
+	FString* GetFamilyName()
+	{
+		static auto fn = UObject::FindObject<UObject>("Function FSD.EnemyComponent.GetFamilyName");
+		FText* armorPct;
+		ProcessEvent(this, fn, &armorPct);
+		return armorPct->Text;
+	}
+};
+
+// Class FSD.EnemyPawn
+// Size: 0x348 (Inherited: 0x2f8)
+class AEnemyPawn : public AFSDPawn
+{
+public:
+	PAD(0x8); // 0x2f8(0x08)
+	struct UEnemyHealthComponent* Health; // 0x300(0x08)
+	PAD(0x10); //struct UPawnStatsComponent* Stats; // 0x308(0x08)
+	//struct UEnemyPawnAfflictionComponent* Affliction; // 0x310(0x08)
+	struct UEnemyComponent* enemy; // 0x318(0x08)
+	struct FName CenterMassSocketName; // 0x320(0x08)
+	PAD(0x20);
+
+	static UClass* StaticClass()
+	{
+		static UClass* ptr = 0;
+
+		if (!ptr)
+		{
+			ptr = UObject::FindObject<UClass>("Class FSD.EnemyPawn");
+		}
+
+		return ptr;
+	}
+};
+
+// Class FSD.EnemyDeepPathfinderCharacter
+// Size: 0x3a8 (Inherited: 0x388)
+class AEnemyDeepPathfinderCharacter
+{
+public:
+	PAD(0x390); // 0x388(0x08)
+	struct UEnemyHealthComponent* HealthComponent; // 0x390(0x08)
+	PAD(0x10);// 0x398(0x10)
+
+	static UClass* StaticClass()
+	{
+		static UClass* ptr = 0;
+
+		if (!ptr)
+		{
+			ptr = UObject::FindObject<UClass>("Class FSD.EnemyDeepPathfinderCharacter");
+		}
+
+		return ptr;
 	}
 };
 
@@ -674,13 +820,58 @@ public:
 	struct FString PlayerNamePrivate; // 0x300(0x10)
 };
 
+// Class Engine.GameModeBase
+// Size: 0x2c0 (Inherited: 0x220)
+class AGameModeBase : public AActor {
+public:
+	PAD(0xA0); //0x220(0xA0)
+};
+
 // Class Engine.GameStateBase
 // Size: 0x270 (Inherited: 0x220)
 class AGameStateBase : public AActor 
 {
 public:
-	PAD(0x18); // 0x220
+	struct AGameModeBase* GameModeClass; // 0x220(0x08)
+	struct AGameModeBase* AuthorityGameMode; // 0x228(0x08)
+	PAD(0x08); // 0x230(0x08)
 	struct TArray<struct APlayerState*> PlayerArray; // 0x238(0x10)
+	PAD(0x28);
+};
+
+// Class Engine.GameMode
+// Size: 0x308 (Inherited: 0x2c0)
+class AGameMode : public AGameModeBase 
+{
+public:
+	struct FName MatchState; // 0x2c0(0x08)
+	PAD(0x4); // 0x2c8(0x4)
+	int32_t NumSpectators; // 0x2cc(0x04)
+	int32_t NumPlayers; // 0x2d0(0x04)
+	int32_t NumBots; // 0x2d4(0x04)
+	PAD(0x30); // 0x2d8(0x30)
+};
+
+// Class FSD.FSDGameMode
+// Size: 0x4f0 (Inherited: 0x308)
+class AFSDGameMode : public AGameMode 
+{
+public:
+	PAD(0x50); // 0x308(0x50)
+	void* EnemySpawnManager;//struct UEnemySpawnManager* EnemySpawnManager; // 0x358(0x08)
+	PAD(0x190); // 0x360(0x190)
+
+	static UClass* StaticClass()
+	{
+		static UClass* ptr = 0;
+
+		if (!ptr)
+		{
+			ptr = UObject::FindObject<UClass>(" Class FSD.FSDGameMode");
+		}
+
+		return ptr;
+	}
 };
 
 // Class Engine.GameInstance
@@ -705,11 +896,20 @@ public:
 class ULevel : public UObject
 {
 public:
-	PAD(0x90); // 0x28(0x90)
-	struct UWorld* OwningWorld; // 0xb8(0x08)
-	PAD(0x18); // 0xC0(0x18)
-	struct ULevelActorContainer* ActorCluster; // 0xd8(0x08)
-	PAD(0x1B8); // 0xE0(0x1B8)
+	PAD(0x70); // 0x28(0x70)
+	struct TArray<struct AActor*> Actors; // 0x98(0x10)
+	PAD(0x1F0); // 0xA0(0x1F0)
+};
+
+// Class Engine.LevelStreaming
+// Size: 0x150 (Inherited: 0x28)
+class ULevelStreaming : public UObject 
+{
+public:
+	PAD(0x100); // 0x28(0x100)
+	struct ULevel* LoadedLevel; // 0x128(0x08)
+	struct ULevel* PendingUnloadLevel; // 0x130(0x08)
+	PAD(0x18); // 0x138(0x18)
 };
 
 // Class Engine.World
@@ -719,9 +919,13 @@ class UWorld : public UObject
 public:
 	PAD(0x8); // 0x28(0x08)
 	struct ULevel* PersistentLevel; // 0x30(0x08)
-	PAD(0xE8); // 0x38(0xE8)
+	PAD(0x50); // 0x38(0x50)
+	struct TArray<struct ULevelStreaming*> StreamingLevels; // 0x88(0x10)
+	PAD(0x88); // 0x98(0x88)
 	struct AGameStateBase* GameState; // 0x120(0x08)
-	PAD(0x58); // 0x128(0x58)
+	PAD(0x10); // 0x128(0x10)
+	struct TArray<struct ULevel*> Levels; // 0x138(0x10)
+	PAD(0x38); // 0x148(0x38)
 	struct UGameInstance* OwningGameInstance; // 0x180(0x08)
 	PAD(0x588); // 0x188(0x588)
 };
@@ -762,15 +966,6 @@ public:
 	struct UFont* SubtitleFont; // 0xb0(0x08)
 	PAD(0x6C8); // 0xb8(0x6C8)
 	struct UGameViewportClient* GameViewport; // 0x780(0x08)
-};
-
-// Class Engine.GameplayStatics
-// Size: 0x28 (Inherited: 0x28)
-class UGameplayStatics : public UObject 
-{
-public:
-
-	void GetAllActorsOfClass(struct UObject* WorldContextObject, struct UClass* ActorClass, struct TArray<struct AActor*>* OutActors); // Function Engine.GameplayStatics.GetAllActorsOfClass // (Final|Native|Static|Public|HasOutParms|BlueprintCallable) // @ game+0x36eb890
 };
 
 extern UEngine** Engine;

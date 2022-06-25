@@ -35,6 +35,9 @@ void PostRenderHook(UGameViewportClient* viewport, UCanvas* canvas)
 		{
 			canvas->K2_DrawText(TitleFont, FString(L"Deep Rock Intervention"), titlePos, scale, color, false, shadow, scale, false, false, true, outline);
 			canvas->K2_DrawTexture(texturePos, textureSize, colorTexture);
+			canvas->K2_DrawLine({ 10.f, 96.f }, { 40.f, 96.f }, 2.0f, colorTexture);
+			canvas->K2_DrawBox({ 150.f, 10.f }, { 40.f, 40.f }, 2.0f, colorTexture);
+			canvas->K2_DrawPolygon({ 150.f, 150.f }, { 40.f, 40.f }, 16, colorTexture);
 
 			auto localPawn = localController->K2_GetPawn();
 			auto players = state->PlayerArray;
@@ -48,6 +51,47 @@ void PostRenderHook(UGameViewportClient* viewport, UCanvas* canvas)
 				armor += std::to_wstring(localPlayerCharacter->HealthComponent->GetArmorPct());
 				canvas->K2_DrawText(TitleFont, FString(health.c_str()), healthPos, scale, color, false, shadow, scale, false, false, true, outline);
 				canvas->K2_DrawText(TitleFont, FString(armor.c_str()), armorPos, scale, color, false, shadow, scale, false, false, true, outline);
+
+				auto level = world->PersistentLevel;
+
+				if (level)
+				{
+					for (int i = 0; i < level->Actors.Count; i++)
+					{
+						auto currentActor = level->Actors.Data[i];
+
+						if (currentActor && currentActor->IsA(AEnemyDeepPathfinderCharacter::StaticClass()))
+						{
+							auto enemy = (AEnemyDeepPathfinderCharacter*)currentActor;
+							auto location = currentActor->K2_GetActorLocation();
+							FVector2D screen;
+							if (localController->ProjectWorldLocationToScreen(location, screen, true))
+							{
+								auto name = currentActor->GetFullName();
+								std::wstring finalName(name.begin(), name.end());
+
+								auto fstring = FString(finalName.c_str());
+								canvas->K2_DrawText(Font, fstring, screen, scale, color, false, shadow, scale, true, true, true, outline);
+								screen.Y += 15.0f;
+								std::wstring health = L"Health: ";
+								health += std::to_wstring(enemy->HealthComponent->GetHealth());
+								canvas->K2_DrawText(TitleFont, FString(health.c_str()), screen, scale, color, false, shadow, scale, true, false, true, outline);
+							}
+						}
+
+						/*if (currentActor && currentActor->IsA(AEnemyPawn::StaticClass()))
+						{
+							auto currentPawn = (AEnemyPawn*)currentActor;
+							auto location = currentPawn->K2_GetActorLocation();
+							FVector2D screen;
+							if (localController->ProjectWorldLocationToScreen(location, screen, true))
+							{
+								auto name = FString(L"Enemy");
+								canvas->K2_DrawText(Font, name, screen, scale, color, false, shadow, scale, true, true, true, outline);
+							}
+						}*/
+					}
+				}
 			}
 
 			for (auto i = 0; i < players.Count; i++)
@@ -84,7 +128,7 @@ bool CheatInit()
 	auto engine = *Engine;
 	if (!engine) return false;
 
-	Font = engine->SubtitleFont; 
+	Font = engine->SubtitleFont;
 	if (!Font) return false;
 
 	TitleFont = engine->MediumFont;
