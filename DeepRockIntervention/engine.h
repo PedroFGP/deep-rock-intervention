@@ -11,7 +11,11 @@ public:
 	FVector(float InF) : X(InF), Y(InF), Z(InF) { }
 	float Size() const { return sqrtf(X * X + Y * Y + Z * Z); }
 	float DistTo(const FVector& V) const { return (*this - V).Size(); }
+
+	FVector operator+(const FVector& other) const { return FVector(X + other.X, Y + other.Y, Z + other.Z); }
 	FVector operator-(const FVector& other) const { return FVector(X - other.X, Y - other.Y, Z - other.Z); }
+	FVector operator*(const FVector& V) const { return FVector(X * V.X, Y * V.Y, Z * V.Z); }
+	FVector operator/(const FVector& V) const { return FVector(X / V.X, Y / V.Y, Z / V.Z); }
 };
 
 class FVector2D 
@@ -21,6 +25,13 @@ public:
 
 	FVector2D() : X(0.f), Y(0.f) {}
 	FVector2D(float X, float Y) : X(X), Y(Y) {}
+
+	FVector2D operator + (const FVector2D& other) const { return FVector2D(X + other.X, Y + other.Y); }
+	FVector2D operator- (const FVector2D& other) const { return FVector2D(X - other.X, Y - other.Y); }
+	FVector2D operator* (float scalar) const { return FVector2D(X * scalar, Y * scalar); }
+	FVector2D operator/ (float scalar) const { return FVector2D(X / scalar, Y / scalar); }
+	friend bool operator>(const FVector2D& one, const FVector2D& two) { return one.X > two.X && one.Y > two.Y; }
+	friend bool operator<(const FVector2D& one, const FVector2D& two) { return one.X < two.X && one.Y < two.Y; }
 };
 
 const FVector2D ZeroVector(0.0f, 0.0f);
@@ -439,6 +450,26 @@ public:
 		return location;
 	}
 
+	void GetActorBounds(bool bOnlyCollidingComponents, struct FVector& Origin, struct FVector& BoxExtent, bool bIncludeFromChildActors)
+	{
+		static auto fn = UObject::FindObject<UObject>("Function Engine.Actor.GetActorBounds");
+		struct
+		{
+			bool bOnlyCollidingComponents = false;
+			FVector Origin;
+			FVector BoxExtent;
+			bool bIncludeFromChildActors = false;
+		} params;
+
+		params.bOnlyCollidingComponents = bOnlyCollidingComponents;
+		params.bIncludeFromChildActors = bIncludeFromChildActors;
+
+		ProcessEvent(this, fn, &params);
+
+		Origin = params.Origin;
+		BoxExtent = params.BoxExtent;
+	}
+
 	static UClass* StaticClass()
 	{
 		static UClass* ptr = 0;
@@ -715,6 +746,22 @@ class APlayerCameraManager : public AActor
 {
 public:
 	PAD(0x2520); // 0x220
+
+	struct FRotator GetCameraRotation()
+	{
+		static auto fn = UObject::FindObject<UObject>("Function Engine.PlayerCameraManager.GetCameraRotation");
+		FRotator CompToWorld;
+		ProcessEvent(this, fn, &CompToWorld);
+		return CompToWorld;
+	};
+
+	struct FVector GetCameraLocation()
+	{
+		static auto fn = UObject::FindObject<UObject>("Function Engine.PlayerCameraManager.GetCameraLocation");
+		FVector CompToWorld;
+		ProcessEvent(this, fn, &CompToWorld);
+		return CompToWorld;
+	}
 };
 
 // Class Engine.SkeletalMeshComponent
@@ -781,7 +828,7 @@ public:
 	PAD(0x20); // 0x298(0x08)
 	struct APlayerCameraManager* PlayerCameraManager; // 0x2b8(0x08)
 
-	bool ProjectWorldLocationToScreen(struct FVector& WorldLocation, struct FVector2D& ScreenLocation, bool bPlayerViewportRelative)
+	bool ProjectWorldLocationToScreen(struct FVector WorldLocation, struct FVector2D& ScreenLocation, bool bPlayerViewportRelative)
 	{
 		static auto fn = UObject::FindObject<UObject>("Function Engine.PlayerController.ProjectWorldLocationToScreen");
 
@@ -798,6 +845,25 @@ public:
 		ScreenLocation = parms.ScreenLocation;
 		return parms.ReturnValue;
 	};
+
+	bool LineOfSightTo(struct AActor* Other, struct FVector* ViewPoint, bool bAlternateChecks)
+	{
+		static auto fn = UObject::FindObject<UObject>("Function Engine.Controller.LineOfSightTo");
+
+		struct {
+			AActor* Other = nullptr;
+			FVector ViewPoint;
+			bool bAlternateChecks = false;
+			bool ReturnValue = false;
+		} params;
+
+		params.Other = Other;
+		params.ViewPoint = *ViewPoint;
+		params.bAlternateChecks = bAlternateChecks;
+
+		ProcessEvent(this, fn, &params);
+		return params.ReturnValue;
+	}
 };
 
 // Class Engine.Player
