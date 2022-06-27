@@ -1,6 +1,68 @@
 #pragma once
 #include "pch.h"
 
+typedef __m128	VectorRegister;
+typedef __m128i VectorRegisterInt;
+typedef __m128d VectorRegisterDouble;
+
+#define VectorMultiply(a,b) _mm_mul_ps(a,b)
+#define SHUFFLEMASK(A0,A1,B2,B3) ( (A0) | ((A1)<<2) | ((B2)<<4) | ((B3)<<6) )
+#define VectorReplicate( Vec, ElementIndex ) _mm_shuffle_ps( Vec, Vec, SHUFFLEMASK(ElementIndex,ElementIndex,ElementIndex,ElementIndex) )
+#define VectorMultiplyAdd( Vec1, Vec2, Vec3 ) _mm_add_ps( _mm_mul_ps(Vec1, Vec2), Vec3 )
+
+struct FMatrix
+{
+public:
+	union
+	{
+		__declspec(align(16)) float M[4][4];
+	};
+
+	__forceinline void VectorMatrixMultiply(void* Result, const void* Matrix1, const void* Matrix2)
+	{
+		const VectorRegister* A = (const VectorRegister*)Matrix1;
+		const VectorRegister* B = (const VectorRegister*)Matrix2;
+		VectorRegister* R = (VectorRegister*)Result;
+		VectorRegister Temp, R0, R1, R2, R3;
+
+		// First row of result (Matrix1[0] * Matrix2).
+		Temp = VectorMultiply(VectorReplicate(A[0], 0), B[0]);
+		Temp = VectorMultiplyAdd(VectorReplicate(A[0], 1), B[1], Temp);
+		Temp = VectorMultiplyAdd(VectorReplicate(A[0], 2), B[2], Temp);
+		R0 = VectorMultiplyAdd(VectorReplicate(A[0], 3), B[3], Temp);
+
+		// Second row of result (Matrix1[1] * Matrix2).
+		Temp = VectorMultiply(VectorReplicate(A[1], 0), B[0]);
+		Temp = VectorMultiplyAdd(VectorReplicate(A[1], 1), B[1], Temp);
+		Temp = VectorMultiplyAdd(VectorReplicate(A[1], 2), B[2], Temp);
+		R1 = VectorMultiplyAdd(VectorReplicate(A[1], 3), B[3], Temp);
+
+		// Third row of result (Matrix1[2] * Matrix2).
+		Temp = VectorMultiply(VectorReplicate(A[2], 0), B[0]);
+		Temp = VectorMultiplyAdd(VectorReplicate(A[2], 1), B[1], Temp);
+		Temp = VectorMultiplyAdd(VectorReplicate(A[2], 2), B[2], Temp);
+		R2 = VectorMultiplyAdd(VectorReplicate(A[2], 3), B[3], Temp);
+
+		// Fourth row of result (Matrix1[3] * Matrix2).
+		Temp = VectorMultiply(VectorReplicate(A[3], 0), B[0]);
+		Temp = VectorMultiplyAdd(VectorReplicate(A[3], 1), B[1], Temp);
+		Temp = VectorMultiplyAdd(VectorReplicate(A[3], 2), B[2], Temp);
+		R3 = VectorMultiplyAdd(VectorReplicate(A[3], 3), B[3], Temp);
+
+		// Store result
+		R[0] = R0;
+		R[1] = R1;
+		R[2] = R2;
+		R[3] = R3;
+	};
+
+	__forceinline FMatrix operator*(const FMatrix& Other) {
+		FMatrix Result;
+		VectorMatrixMultiply(&Result, this, &Other);
+		return Result;
+	};
+};
+
 class FVector 
 {
 public:
@@ -72,9 +134,9 @@ public:
 	PAD(0x4); // 0x1c(0x04)
 	class FVector Scale3D; // 0x20(0x0c)
 	PAD(0x4); // 0x2c(0x04)
+
+	FMatrix ToMatrixWithScale() const;
 };
-
-
 
 template<typename T>
 struct TArray 
@@ -113,11 +175,11 @@ public:
 	}
 };
 
-class FText
+class FTextData
 {
 public:
-	FString* Text;
-	PAD(0x10);
+	PAD(0x28);
+	FString Text;
 };
 
 class FNameEntryHandle 
@@ -162,11 +224,17 @@ public:
 class FName 
 {
 public:
-
 	uint32_t Index;
 	uint32_t Number;
 
 	std::string GetName() const;
+};
+
+class FKey
+{
+public:
+	FName KeyName;
+	PAD(0x10);
 };
 
 class TUObjectArray
@@ -508,12 +576,23 @@ public:
 	}
 };
 
+// Class FSD.EnemyDescriptor
+// Size: 0x220 (Inherited: 0x30)
+class UEnemyDescriptor
+{
+public:
+	PAD(0x30);
+	void* EnemyID; // 0x30(0x08)
+};
+
 // Class FSD.FSDPawn
 // Size: 0x2f8 (Inherited: 0x280)
 class AFSDPawn : public APawn 
 {
 public:
-	PAD(0x78); // 0x280(0x78)
+	PAD(0x58); // 0x280(0x58)
+	struct UEnemyDescriptor* SpawnedFromDescriptor; // 0x2d8(0x08)
+	PAD(0x18); // 0x2e0(0x18)
 
 	struct UHealthComponentBase* GetHealthComponent() 
 	{
@@ -612,7 +691,7 @@ class UEnemyFamily
 public:
 	PAD(0x30); // 0x00(0x30)
 	void* Icon; // 0x30(0x08)
-	struct FText Name; // 0x38(0x18)
+	struct FTextData* Name; // 0x38(0x18)
 };
 
 // Class FSD.SimpleObjectInfoComponent
@@ -621,8 +700,8 @@ class USimpleObjectInfoComponent
 {
 public:
 	PAD(0xB0); // 0x00(0xb0)
-	struct FText InGameName; // 0xb0(0x18)
-	struct FText InGameDescription; // 0xc8(0x18)
+	struct FTextData* InGameName; // 0xb0(0x18)
+	struct FTextData* InGameDescription; // 0xc8(0x18)
 };
 
 // Class FSD.EnemyComponent
@@ -634,14 +713,6 @@ public:
 	PAD(0x10); // 0x178(0x10)
 	struct FString mixerName; // 0x188(0x10)
 	PAD(0x10); // 0x198(0x10)
-
-	FString* GetFamilyName()
-	{
-		static auto fn = UObject::FindObject<UObject>("Function FSD.EnemyComponent.GetFamilyName");
-		FText* armorPct;
-		ProcessEvent(this, fn, &armorPct);
-		return armorPct->Text;
-	}
 };
 
 // Class FSD.EnemyPawn
@@ -670,12 +741,42 @@ public:
 	}
 };
 
-// Class FSD.EnemyDeepPathfinderCharacter
-// Size: 0x3a8 (Inherited: 0x388)
-class AEnemyDeepPathfinderCharacter
+// Class Engine.KismetTextLibrary
+// Size: 0x28 (Inherited: 0x28)
+class UKismetTextLibrary : public UObject
+{
+private:
+	static inline UClass* defaultObj;
+public:
+	static bool Init() {
+		return defaultObj = UObject::FindObject<UClass>("Class Engine.KismetTextLibrary");
+	}
+
+	FString Conv_TextToString(struct FText& InText)
+	{
+		static auto fn = UObject::FindObject<UObject>("Function Engine.KismetTextLibrary.Conv_TextToString");
+		FString string;
+		ProcessEvent(defaultObj, fn, &string);
+		return string;
+	}
+};
+
+// Class FSD.DeepPathfinderCharacter
+// Size: 0x388 (Inherited: 0x2f8)
+class ADeepPathfinderCharacter : public AFSDPawn 
 {
 public:
-	PAD(0x390); // 0x388(0x08)
+	PAD(0x18); // 0x2f8(0x18)
+	struct USkeletalMeshComponent* Mesh; // 0x310(0x08)
+	PAD(0x70); // 0x318(0x70)
+};
+
+// Class FSD.EnemyDeepPathfinderCharacter
+// Size: 0x3a8 (Inherited: 0x388)
+class AEnemyDeepPathfinderCharacter : public ADeepPathfinderCharacter
+{
+public:
+	PAD(0x08); // 0x388(0x08)
 	struct UEnemyHealthComponent* HealthComponent; // 0x390(0x08)
 	PAD(0x10);// 0x398(0x10)
 
@@ -689,6 +790,97 @@ public:
 		}
 
 		return ptr;
+	}
+};
+
+// Class FSD.AFlyingBug
+// Size: 0x428 (Inherited: 0x3a8)
+class AAFlyingBug : public AEnemyDeepPathfinderCharacter 
+{
+public:
+	struct UEnemyComponent* EnemyComponent; // 0x3a8(0x08)
+};
+
+// Class FSD.EnemyMinersManualData
+// Size: 0x180 (Inherited: 0x30)
+class UEnemyMinersManualData 
+{
+public:
+	PAD(0x30); // 0x00(0x30)
+	void* EnemyID;
+	struct FTextData* Name; // 0x38(0x08)
+	PAD(0x10); // 0x40(0x10)
+	struct FTextData* RichDescription; // 0x50(0x18)
+	PAD(0x10); // 0x58(0x10)
+	struct TArray<struct FText> GameplayTips; // 0x68(0x10)
+	BYTE Family; // 0x78(0x01)
+	BYTE EnemyType; // 0x79(0x01)
+	PAD(0x106); // 0x7A(0x106)
+};
+
+// Class FSD.MinersManual
+// Size: 0x1a0 (Inherited: 0x30)
+class UMinersManual
+{
+public:
+	PAD(0xC0); // 0x00(0xC0)
+	struct TArray<struct UEnemyMinersManualData*> Enemies; // 0xc0(0x10)
+
+	FString GetNameFromEnemyId(void* EnemyID)
+	{
+		for (int i = 0; i < Enemies.Size; i++)
+		{
+			auto enemyData = Enemies.Data[i];
+
+			if (enemyData && enemyData->EnemyID == EnemyID)
+			{
+				return enemyData->Name->Text;
+			}
+		}
+
+		return FString();
+	}
+};
+
+// Class FSD.GameData
+// Size: 0x988 (Inherited: 0x28)
+class UGameData : public UObject
+{
+public:
+	PAD(0x3B8); // 0x28(0x3B8)
+	struct UMinersManual* MinersManual; // 0x3e0(0x08)
+	PAD(0x5A0); // 0x3e8(0x5A0)
+
+	static UClass* StaticClass()
+	{
+		static UClass* ptr = 0;
+
+		if (!ptr)
+		{
+			ptr = UObject::FindObject<UClass>("Class FSD.GameData");
+		}
+
+		return ptr;
+	}
+};
+
+// Class FSD.GameFunctionLibrary
+// Size: 0x28 (Inherited: 0x28)
+class UGameFunctionLibrary
+{
+private:
+	static inline UClass* defaultObj;
+public:
+	static bool Init() {
+		return defaultObj = UObject::FindObject<UClass>("Class FSD.GameFunctionLibrary");
+	}
+
+	static UGameData* GetFSDGameData()
+	{
+		static auto fn = UObject::FindObject<UObject>("Function FSD.GameFunctionLibrary.GetFSDGameData");
+		UGameData* gameData;
+		ProcessEvent(defaultObj, fn, &gameData);
+		return gameData;
 	}
 };
 
@@ -737,6 +929,53 @@ public:
 		}
 
 		return ptr;
+	}
+};
+
+// Class Engine.KismetMathLibrary
+// Size: 0x28 (Inherited: 0x28)
+class UKismetMathLibrary : public UObject
+{
+private:
+	static inline UClass* defaultObj;
+public:
+	static bool Init() {
+		return defaultObj = UObject::FindObject<UClass>("Class Engine.KismetMathLibrary");
+	}
+
+	static struct FRotator NormalizedDeltaRotator(struct FRotator A, struct FRotator B)
+	{
+		static auto fn = UObject::FindObject<UObject>("Function Engine.KismetMathLibrary.NormalizedDeltaRotator");
+
+		struct
+		{
+			struct FRotator                A;
+			struct FRotator                B;
+			struct FRotator                ReturnValue;
+		} params;
+
+		params.A = A;
+		params.B = B;
+
+		ProcessEvent(defaultObj, fn, &params);
+
+		return params.ReturnValue;
+	}
+
+	static FRotator FindLookAtRotation(const FVector& Start, const FVector& Target) 
+	{
+		static auto fn = UObject::FindObject<UObject>("Function Engine.KismetMathLibrary.FindLookAtRotation");
+
+		struct {
+			FVector Start;
+			FVector Target;
+			FRotator ReturnValue;
+		} params;
+
+		params.Start = Start;
+		params.Target = Target;
+		ProcessEvent(defaultObj, fn, &params);
+		return params.ReturnValue;
 	}
 };
 
@@ -794,6 +1033,15 @@ public:
 		ProcessEvent(this, fn, &CompToWorld);
 		return CompToWorld;
 	}
+
+	bool GetBone(const uint32_t id, const FMatrix& componentToWorld, FVector& pos) {
+		if (id >= CachedComponentSpaceTransforms.Count) return false;
+		const auto& bone = CachedComponentSpaceTransforms.Data[id];
+		auto boneMatrix = bone.ToMatrixWithScale();
+		auto world = boneMatrix * componentToWorld;
+		pos = { world.M[3][0], world.M[3][1], world.M[3][2] };
+		return true;
+	}
 };
 
 // Class Engine.Controller
@@ -818,6 +1066,7 @@ public:
 
 		return pawn;
 	}
+
 };
 
 // Class Engine.PlayerController
@@ -861,6 +1110,29 @@ public:
 		params.ViewPoint = *ViewPoint;
 		params.bAlternateChecks = bAlternateChecks;
 
+		ProcessEvent(this, fn, &params);
+		return params.ReturnValue;
+	}
+
+	void AddYawInput(float Val) {
+		static auto fn = UObject::FindObject<UObject>("Function Engine.PlayerController.AddYawInput");
+		ProcessEvent(this, fn, &Val);
+	}
+
+	void AddPitchInput(float Val) {
+		static auto fn = UObject::FindObject<UObject>("Function Engine.PlayerController.AddPitchInput");
+		ProcessEvent(this, fn, &Val);
+	}
+
+	bool WasInputKeyJustPressed(const FKey& Key) {
+		static auto fn = UObject::FindObject<UObject>("Function Engine.PlayerController.WasInputKeyJustPressed");
+		struct
+		{
+			FKey Key;
+			bool ReturnValue = false;
+		} params;
+
+		params.Key = Key;
 		ProcessEvent(this, fn, &params);
 		return params.ReturnValue;
 	}
