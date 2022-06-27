@@ -6,6 +6,8 @@
 #include <math.h>
 #include <stdint.h>
 #include <string>
+#include <xmmintrin.h>
+#include <emmintrin.h>
 
 #include "utils.h"
 #include "engine.h"
