@@ -87,6 +87,8 @@ public:
 
 	FVector2D() : X(0.f), Y(0.f) {}
 	FVector2D(float X, float Y) : X(X), Y(Y) {}
+	float Size() const { return sqrtf(X * X + Y * Y); }
+	float DistTo(const FVector2D& V) const { return (*this - V).Size(); }
 
 	FVector2D operator + (const FVector2D& other) const { return FVector2D(X + other.X, Y + other.Y); }
 	FVector2D operator- (const FVector2D& other) const { return FVector2D(X - other.X, Y - other.Y); }
@@ -906,6 +908,208 @@ public:
 };
 
 
+// Class FSD.Item
+// Size: 0x340 (Inherited: 0x220)
+class AItem : public AActor 
+{
+public:
+	PAD(0x120);
+};
+
+// Class FSD.AnimatedItem
+// Size: 0x390 (Inherited: 0x340)
+class AAnimatedItem : public AItem 
+{
+public:
+	PAD(0x50);
+};
+
+// ScriptStruct FSD.RandRange
+// Size: 0x08 (Inherited: 0x00)
+class FRandRange 
+{
+public:
+	float Min; // 0x00(0x04)
+	float Max; // 0x04(0x04)
+};
+
+// ScriptStruct FSD.RecoilSettings
+// Size: 0x28 (Inherited: 0x00)
+class FRecoilSettings 
+{
+public:
+	struct FRandRange RecoilRoll; // 0x00(0x08)
+	struct FRandRange RecoilPitch; // 0x08(0x08)
+	struct FRandRange RecoilYaw; // 0x10(0x08)
+	bool CanRecoilDown; // 0x18(0x01)
+	PAD(0x3); // 0x19(0x03)
+	float SpringStiffness; // 0x1c(0x04)
+	float CriticalDampening; // 0x20(0x04)
+	float Mass; // 0x24(0x04)
+};
+
+// Enum FSD.EAmmoWeaponState
+enum class EAmmoWeaponState : uint8_t 
+{
+	Equipping = 0,
+	Ready = 1,
+	Cycling = 2,
+	Reloading = 3,
+	BurstCycling = 4,
+	EAmmoWeaponState_MAX = 5
+};
+
+// Class FSD.WeaponFireComponent
+// Size: 0x110 (Inherited: 0xb0)
+class UWeaponFireComponent : public UActorComponent
+{
+public:
+	PAD(0x60); // 0xb0(0x80)
+};
+
+// Class FSD.DamageImpulse
+// Size: 0x40 (Inherited: 0x30)
+class UDamageImpulse
+{
+public:
+	PAD(0x30); // 0x00(0x30)
+	float ImpactForce; // 0x30(0x04)
+	float UpwardForceScale; // 0x34(0x04)
+};
+
+// Class FSD.DamageComponent
+// Size: 0x1d8 (Inherited: 0xb0)
+class UDamageComponent : public UActorComponent
+{
+public:
+	PAD(0x60); // 0xb0(0x50)
+	struct UDamageImpulse* DamageImpulse; // 0x110(0x08)
+	float Damage; // 0x118(0x04)
+	float ArmorDamageMultiplier; // 0x11c(0x04)
+	bool ShattersArmor; // 0x120(0x01)
+	PAD(0x13); // 0x121(0x07)
+	float WeakpointDamageMultiplier; // 0x134(0x04)
+	float FrozenDamageBonusScale; // 0x138(0x04)
+	float friendlyFireModifier; // 0x13c(0x04)
+	float SelfFriendlyFireMultiplier; // 0x140(0x04)
+	PAD(0x8); // 0x144(0x08)
+	bool StaggerOnlyOnWeakpointHit; // 0x14c(0x01)
+	PAD(0x3); // 0x14d(0x03)
+	float StaggerChance; // 0x150(0x04)
+	float StaggerDuration; // 0x154(0x04)
+	float FearFactor; // 0x158(0x04)
+	PAD(0x44); // 0x15c(0x04)
+	bool UseAreaOfEffect; // 0x1a0(0x01)
+	PAD(0x3); // 0x1a1(0x03)
+	float RadialDamage; // 0x1a4(0x04)
+	bool NoFriendlyFireFromRadial; // 0x1a8(0x01)
+	PAD(0xF); // 0x1a9(0x07)
+	float MinDamagePct; // 0x1b8(0x04)
+	float DamageRadius; // 0x1bc(0x04)
+	float MaxDamageRadius; // 0x1c0(0x04)
+	PAD(0x14); // 0x1c4(0x14)
+};
+
+// Class FSD.HitscanBaseComponent
+// Size: 0x238 (Inherited: 0x110)
+class UHitscanBaseComponent : public UWeaponFireComponent
+{
+public:
+	float SpreadPerShot; // 0x130(0x04)
+	PAD(0x4); // 0x134(0x04)
+	struct UDamageComponent* DamageComponent; // 0x138(0x08)
+	bool UseDamageComponent; // 0x140(0x01)
+	PAD(0x3); // 0x141(0x03)
+	float Damage; // 0x144(0x04)
+	float ArmorDamageMultiplier; // 0x148(0x04)
+	PAD(0xC); // 0x14c(0x04)
+	float WeakpointDamageMultiplier; // 0x158(0x04)
+	int32_t MaxPenetrations; // 0x15c(0x04)
+	PAD(0x4); // 0x160(0x03)
+	float friendlyFireModifier; // 0x164(0x04)
+	bool UseDynamicSpread; // 0x168(0x01)
+	PAD(0x3); // 0x169(0x03)
+	float MinSpread; // 0x16c(0x04)
+	float MinSpreadWhenMoving; // 0x170(0x04)
+	float MinSpreadWhenSprinting; // 0x174(0x04)
+	float MaxSpread; // 0x178(0x04)
+	PAD(0x8C); // 0x17c(0x04)
+	float SpreadRecoveryPerSecond; // 0x208(0x04)
+	PAD(0x8); // 0x20c(0x08)
+	float VerticalSpreadMultiplier; // 0x214(0x04)
+	float HorizontalSpredMultiplier; // 0x218(0x04)
+	float MaxVerticalSpread; // 0x21c(0x04)
+	float MaxHorizontalSpread; // 0x220(0x04)
+	PAD(0x8); // 0x224(0x04)
+	float RicochetChance; // 0x22c(0x04)
+	bool RicochetOnWeakspotOnly; // 0x230(0x01)
+	PAD(0x3); // 0x231(0x03)
+	float RicochetMaxRange; // 0x234(0x04)
+};
+
+// Class FSD.AmmoDrivenWeapon
+// Size: 0x6e0 (Inherited: 0x390)
+class AAmmoDrivenWeapon : public AAnimatedItem 
+{
+public:
+	PAD(0x80); // 0x390(0x80)
+	struct UWeaponFireComponent* WeaponFire; // 0x410(0x08)
+	PAD(0x220); // 0x418(0x220)
+	int32_t MaxAmmo; // 0x638(0x04)
+	int32_t ClipSize; // 0x63c(0x04)
+	int32_t ShotCost; // 0x640(0x04)
+	float RateOfFire; // 0x644(0x04)
+	int32_t BurstCount; // 0x648(0x04)
+	float BurstCycleTime; // 0x64c(0x04)
+	float ReloadDuration; // 0x650(0x04)
+	int32_t AmmoCount; // 0x654(0x04)
+	int32_t ClipCount; // 0x658(0x04)
+	PAD(0x34); // 0x65C(0x34)
+	struct FRecoilSettings RecoilSettings; // 0x690(0x28)
+	bool HasAutomaticFire; // 0x6b8(0x01)
+	bool IsFiring; // 0x6b9(0x01)
+	PAD(0x18); // 0x6ba(0x18)
+	enum class EAmmoWeaponState WeaponState; // 0x6d2(0x01)
+	PAD(0xd); // 0x6d3(0x0d)
+
+	static UClass* StaticClass()
+	{
+		static UClass* ptr = 0;
+
+		if (!ptr)
+		{
+			ptr = UObject::FindObject<UClass>("Class FSD.AmmoDrivenWeapon");
+		}
+
+		return ptr;
+	}
+};
+
+// BlueprintGeneratedClass WPN_AssaultRifle.WPN_AssaultRifle_C
+// Size: 0x750 (Inherited: 0x700)
+class AWPN_AssaultRifle_C
+{
+public:
+	PAD(0x718); // 0x00(0x718)
+	struct UDamageComponent* Damage; // 0x718(0x08)
+	PAD(0x20); // 0x720(0x20)
+	struct UHitscanBaseComponent* HitScan; // 0x740(0x08)
+	PAD(0x8); // 0x748(0x08)
+
+	static UClass* StaticClass()
+	{
+		static UClass* ptr = 0;
+
+		if (!ptr)
+		{
+			ptr = UObject::FindObject<UClass>("BlueprintGeneratedClass WPN_AssaultRifle.WPN_AssaultRifle_C");
+		}
+
+		return ptr;
+	}
+};
+
+
 // Class FSD.PlayerCharacter
 // Size: 0xe10 (Inherited: 0x4c0)
 class APlayerCharacter : public ACharacter 
@@ -918,6 +1122,15 @@ public:
 	PAD(0x28); // 0xaa8(0x28)
 	struct UCharacterRecoilComponent* RecoilComponent; // 0xad0(0x08)
 	PAD(0x338); // 0xad8(0x338)
+
+	struct AItem* GetEquippedItem()
+	{
+		static auto fn = UObject::FindObject<UObject>("Function FSD.PlayerCharacter.GetEquippedItem");
+
+		AItem* ReturnValue;
+		ProcessEvent(this, fn, &ReturnValue);
+		return ReturnValue;
+	}
 
 	static UClass* StaticClass()
 	{
@@ -1044,6 +1257,16 @@ public:
 	}
 };
 
+// Class Engine.SceneComponent
+// Size: 0x200 (Inherited: 0xb0)
+struct USceneComponent : public UActorComponent 
+{
+public:
+	PAD(0x6C); // 0xb0(0x6C)
+	struct FVector RelativeLocation; // 0x11c(0x0c)
+	struct FRotator RelativeRotation; // 0x128(0x0c)
+};
+
 // Class Engine.Controller
 // Size: 0x298 (Inherited: 0x220)
 class AController : public AActor
@@ -1055,7 +1278,10 @@ public:
 	struct APawn* Pawn; // 0x250(0x08)
 	PAD(0x8); // 0x258(0x08)
 	struct ACharacter* Character; // 0x260(0x08)
-	PAD(0x30); // 0x268(0x30)
+	struct USceneComponent* TransformComponent; // 0x268(0x08)
+	PAD(0x18); // 0x270(0x18)
+	struct FRotator ControlRotation; // 0x288(0x0c)
+	PAD(0x4); // 0x294(0x04)
 	
 	APawn* K2_GetPawn()
 	{
@@ -1076,6 +1302,10 @@ class APlayerController : public AController
 public:
 	PAD(0x20); // 0x298(0x08)
 	struct APlayerCameraManager* PlayerCameraManager; // 0x2b8(0x08)
+	PAD(0x16C); // 0x2C0(0x16C)
+	float InputYawScale; // 0x42c(0x04)
+	float InputPitchScale; // 0x430(0x04)
+	PAD(0x13C); // 0x434(0x13C)
 
 	bool ProjectWorldLocationToScreen(struct FVector WorldLocation, struct FVector2D& ScreenLocation, bool bPlayerViewportRelative)
 	{
@@ -1095,46 +1325,16 @@ public:
 		return parms.ReturnValue;
 	};
 
-	bool LineOfSightTo(struct AActor* Other, struct FVector* ViewPoint, bool bAlternateChecks)
-	{
-		static auto fn = UObject::FindObject<UObject>("Function Engine.Controller.LineOfSightTo");
-
-		struct {
-			AActor* Other = nullptr;
-			FVector ViewPoint;
-			bool bAlternateChecks = false;
-			bool ReturnValue = false;
-		} params;
-
-		params.Other = Other;
-		params.ViewPoint = *ViewPoint;
-		params.bAlternateChecks = bAlternateChecks;
-
-		ProcessEvent(this, fn, &params);
-		return params.ReturnValue;
-	}
-
 	void AddYawInput(float Val) {
+		Val = Val / InputYawScale;
 		static auto fn = UObject::FindObject<UObject>("Function Engine.PlayerController.AddYawInput");
 		ProcessEvent(this, fn, &Val);
 	}
 
 	void AddPitchInput(float Val) {
+		Val = Val / InputPitchScale;
 		static auto fn = UObject::FindObject<UObject>("Function Engine.PlayerController.AddPitchInput");
 		ProcessEvent(this, fn, &Val);
-	}
-
-	bool WasInputKeyJustPressed(const FKey& Key) {
-		static auto fn = UObject::FindObject<UObject>("Function Engine.PlayerController.WasInputKeyJustPressed");
-		struct
-		{
-			FKey Key;
-			bool ReturnValue = false;
-		} params;
-
-		params.Key = Key;
-		ProcessEvent(this, fn, &params);
-		return params.ReturnValue;
 	}
 };
 
@@ -1205,7 +1405,7 @@ public:
 
 		if (!ptr)
 		{
-			ptr = UObject::FindObject<UClass>(" Class FSD.FSDGameMode");
+			ptr = UObject::FindObject<UClass>("Class FSD.FSDGameMode");
 		}
 
 		return ptr;
@@ -1306,8 +1506,134 @@ public:
 	struct UGameViewportClient* GameViewport; // 0x780(0x08)
 };
 
+// Enum Engine.ETraceTypeQuery
+enum class ETraceTypeQuery : uint8_t {
+	TraceTypeQuery1 = 0,
+	TraceTypeQuery2 = 1,
+	TraceTypeQuery3 = 2,
+	TraceTypeQuery4 = 3,
+	TraceTypeQuery5 = 4,
+	TraceTypeQuery6 = 5,
+	TraceTypeQuery7 = 6,
+	TraceTypeQuery8 = 7,
+	TraceTypeQuery9 = 8,
+	TraceTypeQuery10 = 9,
+	TraceTypeQuery11 = 10,
+	TraceTypeQuery12 = 11,
+	TraceTypeQuery13 = 12,
+	TraceTypeQuery14 = 13,
+	TraceTypeQuery15 = 14,
+	TraceTypeQuery16 = 15,
+	TraceTypeQuery17 = 16,
+	TraceTypeQuery18 = 17,
+	TraceTypeQuery19 = 18,
+	TraceTypeQuery20 = 19,
+	TraceTypeQuery21 = 20,
+	TraceTypeQuery22 = 21,
+	TraceTypeQuery23 = 22,
+	TraceTypeQuery24 = 23,
+	TraceTypeQuery25 = 24,
+	TraceTypeQuery26 = 25,
+	TraceTypeQuery27 = 26,
+	TraceTypeQuery28 = 27,
+	TraceTypeQuery29 = 28,
+	TraceTypeQuery30 = 29,
+	TraceTypeQuery31 = 30,
+	TraceTypeQuery32 = 31,
+	TraceTypeQuery_MAX = 32,
+	ETraceTypeQuery_MAX = 33
+};
+
+// Enum Engine.EDrawDebugTrace
+enum class EDrawDebugTrace : uint8_t {
+	None = 0,
+	ForOneFrame = 1,
+	ForDuration = 2,
+	Persistent = 3,
+	EDrawDebugTrace_MAX = 4
+};
+
+// ScriptStruct Engine.HitResult
+// Size: 0x88 (Inherited: 0x00)
+struct FHitResult {
+	int32_t FaceIndex; // 0x00(0x04)
+	float Time; // 0x04(0x04)
+	float Distance; // 0x08(0x04)
+	struct FVector Location; // 0x0c(0x0c)
+	struct FVector ImpactPoint; // 0x18(0x0c)
+	struct FVector Normal; // 0x24(0x0c)
+	struct FVector ImpactNormal; // 0x30(0x0c)
+	struct FVector TraceStart; // 0x3c(0x0c)
+	struct FVector TraceEnd; // 0x48(0x0c)
+	float PenetrationDepth; // 0x54(0x04)
+	int32_t Item; // 0x58(0x04)
+	char ElementIndex; // 0x5c(0x01)
+	char bBlockingHit : 1; // 0x5d(0x01)
+	char bStartPenetrating : 1; // 0x5d(0x01)
+	PAD(0x1A); // 0x5E(0x1A)
+	struct FName BoneName; // 0x78(0x08)
+	struct FName MyBoneName; // 0x80(0x08)
+};
+
+extern UWorld* GWorld;
+
+class UKismetSystemLibrary
+{
+private:
+	static inline UClass* defaultObj;
+public:
+	static bool Init() {
+		return defaultObj = UObject::FindObject<UClass>("Class Engine.KismetSystemLibrary");
+	}
+
+	static bool LineTraceSingle(UObject* WorldContextObject, struct FVector Start, struct FVector End, struct FHitResult& OutHit)
+	{
+		static auto fn = UObject::FindObject<UObject>("Function Engine.KismetSystemLibrary.LineTraceSingle");
+
+		struct {
+			UObject* WorldContextObject;
+			FVector Start;
+			FVector End;
+			ETraceTypeQuery TraceChannel;
+			bool bTraceComplex;
+			struct TArray<struct AActor*> ActorsToIgnore;
+			EDrawDebugTrace DrawDebugType;
+			struct FHitResult OutHit;
+			bool bIgnoreSelf;
+			struct FLinearColor TraceColor; 
+			struct FLinearColor TraceHitColor; 
+			float DrawTime;
+			bool ReturnValue;
+		} params;
+
+		auto color = FLinearColor();
+
+		auto actorsToIgnore = TArray<struct AActor*>();
+		params.WorldContextObject = WorldContextObject;
+		params.Start = Start;
+		params.End = End;
+		params.TraceChannel = ETraceTypeQuery::TraceTypeQuery1;
+		params.bTraceComplex = true;
+		params.ActorsToIgnore = actorsToIgnore;
+		params.DrawDebugType = EDrawDebugTrace::None;
+		params.OutHit = OutHit;
+		params.bIgnoreSelf = true;
+		params.TraceColor = color;
+		params.TraceHitColor = color;
+		params.DrawTime = 0.0f;
+		params.ReturnValue = false;
+
+		ProcessEvent(defaultObj, fn, &params);
+		OutHit = params.OutHit;
+		return params.ReturnValue;
+	}
+};
+
 extern UEngine** Engine;
 extern FNamePool* NamePoolData;
 extern TUObjectArray* ObjObjects;
+extern bool aimbotActive;
 
 bool EngineInit();
+void RotatePointOverAngles(FVector& point, FRotator& rotation, FVector& out);
+void rotate(FVector& point, FRotator& rotation, FVector& out);

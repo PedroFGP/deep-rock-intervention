@@ -32,3 +32,9 @@ bool PatchMem(void* address, void* bytes, uint64_t size)
     memcpy(address, bytes, size);
     return VirtualProtect(address, size, oldProtection, &oldProtection);
 }
+
+/* returns <min, max> pair from arr of nelem */
+std::pair<float*, float*> minmaxfloat(float* arr, size_t nelem)
+{
+    return std::minmax_element(arr, arr + nelem);
+}

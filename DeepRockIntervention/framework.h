@@ -8,6 +8,7 @@
 #include <string>
 #include <xmmintrin.h>
 #include <emmintrin.h>
+#include <algorithm>
 
 #include "utils.h"
 #include "engine.h"
