@@ -58,6 +58,7 @@ void PostRenderHook(UGameViewportClient* viewport, UCanvas* canvas)
 		{
 			canvas->K2_DrawText(TitleFont, FString(L"Deep Rock Intervention"), titlePos, scale, color, false, shadow, { 2.f, 2.f }, false, false, true, outline);
 			canvas->K2_DrawText(TitleFont, FString(aimbotActive ? L"Aimbot: ON" : L"Aimbot: OFF"), targetRotationPos, scale, color, false, shadow, { 2.f, 2.f }, false, false, true, outline);
+			canvas->K2_DrawText(TitleFont, FString(boundingBoxActive ? L"Bounding Boxes: ON" : L"Bounding Boxes: OFF"), targetScalePos, scale, color, false, shadow, { 2.f, 2.f }, false, false, true, outline);
 			auto rotation = localController->ControlRotation;
 
 			std::wstring rotationString = L"Pitch: ";
