@@ -98,14 +98,6 @@ void PostRenderHook(UGameViewportClient* viewport, UCanvas* canvas)
 							{
 								auto enemy = (AEnemyDeepPathfinderCharacter*)currentActor;
 
-								if (enemy->IsA(AEnemyPawn::StaticClass()))
-								{
-									auto enemyPawn = (AEnemyPawn*)enemy;
-
-									auto b = enemyPawn->enemy->InGameName;
-
-								};
-
 								if (!enemy->HealthComponent->IsAlive())
 									continue;
 
