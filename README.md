@@ -23,16 +23,19 @@ So far the following has been achieved:
 - [x] Finished drawing methods [Commit](https://github.com/PedroFGP/deep-rock-intervention/commit/04181f3b852d3609ec25a88d34d0668753b01bc4)
 - [x] Added support for correct actor (pawns iteration) [Commit](https://github.com/PedroFGP/deep-rock-intervention/commit/0c587938eff1aced485f466889478c4c5f8b7105)
 - [x] Added support for correct entity naming and bone matrix access (pawns) [Commit](https://github.com/PedroFGP/deep-rock-intervention/commit/89950ade70e2846a9cf104ad88ec3c5c95d6c803)
+- [x] Add support for aimbot [Commit](https://github.com/PedroFGP/deep-rock-intervention/commit/82b02ff167d24466dd07b03bdbaf963794fcc318)
+- [x] Add support for no recoil [Commit](https://github.com/PedroFGP/deep-rock-intervention/commit/82b02ff167d24466dd07b03bdbaf963794fcc318)
+- [x] Fix visibility check [Commit](https://github.com/PedroFGP/deep-rock-intervention/commit/82b02ff167d24466dd07b03bdbaf963794fcc318)
 
 **TODO:**
 
-- [ ] Add support for aimbot
 - [ ] Add support for correct 2D box ESP (Extra Sensorial Perception)
-- [ ] Add support for memory writting (no recoil, etc...)
+- [ ] Refactor code (split classes into individual files)
+- [ ] Add basic menu for on/off features
 
 ## Build & Use
 
-In build and use this project you need vcredists installed and C++ 17 support at least. To use this, set compilation for 64 bits and use a valid injector to inject into the game's process.
+In order to build and use this project you need vcredists installed and C++ 17 support at least. To use this, set compilation for 64 bits and use a valid injector to inject into the game's process.
 
 ## Reference Links
 
