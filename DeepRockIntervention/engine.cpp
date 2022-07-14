@@ -3,7 +3,6 @@
 UEngine** Engine = nullptr;
 TUObjectArray* ObjObjects = nullptr;
 FNamePool* NamePoolData = nullptr;
-UWorld* GWorld = nullptr;
 extern bool aimbotActive = false;
 
 FMatrix FTransform::ToMatrixWithScale() const
@@ -124,25 +123,28 @@ bool EngineInit()
 	NamePoolData = reinterpret_cast<decltype(NamePoolData)>(FindPointer(main, poolSig, sizeof(poolSig), 0));
 	if (!NamePoolData) return false;
 
-	GWorld = *reinterpret_cast<UWorld**>((DWORD64)main + 0x5B417C0);
-
 	return true;
 }
 
 void rotate(FVector& point, FRotator& rotation, FVector& out)
 {
-	rotation.Pitch = D2R(rotation.Roll);
-	rotation.Yaw = D2R(rotation.Yaw);
-	rotation.Roll = D2R(rotation.Roll);
+	out.X = 0;
+	out.Y = 0;
+	out.Z = 0;
 
-	auto cosa = cos(rotation.Yaw);
-	auto sina = sin(rotation.Yaw);
+	FRotator rRotation {0.0f, 0.0f, 0.0f};
+	rRotation.Pitch = D2R(rotation.Pitch);
+	rRotation.Yaw = D2R(rotation.Yaw);
+	rRotation.Roll = D2R(rotation.Roll);
 
-	auto cosb = cos(rotation.Pitch);
-	auto sinb = sin(rotation.Pitch);
+	auto cosa = cos(rRotation.Yaw);
+	auto sina = sin(rRotation.Yaw);
 
-	auto cosc = cos(rotation.Roll);
-	auto sinc = sin(rotation.Roll);
+	auto cosb = cos(rRotation.Pitch);
+	auto sinb = sin(rRotation.Pitch);
+
+	auto cosc = cos(rRotation.Roll);
+	auto sinc = sin(rRotation.Roll);
 
 	auto Axx = cosa * cosb;
 	auto Axy = cosa * sinb * sinc - sina * cosc;
@@ -159,40 +161,4 @@ void rotate(FVector& point, FRotator& rotation, FVector& out)
 	out.X = Axx * point.X + Axy * point.Y + Axz * point.Z;
 	out.Y = Ayx * point.X + Ayy * point.Y + Ayz * point.Z;
 	out.Z = Azx * point.X + Azy * point.Y + Azz * point.Z;
-}
-
-void RotatePointOverAngles(FVector& point, FRotator& rotation, FVector& out)
-{
-	out.X = 0;
-	out.Y = 0;
-	out.Z = 0;
-
-	rotation.Pitch = D2R(rotation.Pitch);
-	rotation.Yaw = D2R(rotation.Yaw);
-	rotation.Roll = D2R(rotation.Roll);
-
-	float rotationMatrix[3][3] =
-	{
-		cos(rotation.Yaw) * cos(rotation.Pitch),
-		(cos(rotation.Yaw) * sin(rotation.Pitch) * sin(rotation.Roll)) - (sin(rotation.Yaw) * cos(rotation.Roll)),
-		(cos(rotation.Yaw) * sin(rotation.Pitch) * cos(rotation.Roll)) - (sin(rotation.Yaw) * sin(rotation.Roll)),
-		sin(rotation.Yaw) * cos(rotation.Pitch),
-		(sin(rotation.Yaw) * sin(rotation.Pitch) * sin(rotation.Roll)) + (cos(rotation.Yaw) * cos(rotation.Roll)),
-		(sin(rotation.Yaw) * sin(rotation.Pitch) * cos(rotation.Roll)) - (cos(rotation.Yaw) * sin(rotation.Roll)),
-		-sin(rotation.Pitch),
-		cos(rotation.Pitch) * sin(rotation.Roll),
-		cos(rotation.Pitch) * cos(rotation.Roll)
-	};
-
-	out.X += (rotationMatrix[0][0] * point.X);
-	out.X += (rotationMatrix[0][1] * point.Y);
-	out.X += (rotationMatrix[0][2] * point.Z);
-
-	out.Y += (rotationMatrix[1][0] * point.X);
-	out.Y += (rotationMatrix[1][1] * point.Y);
-	out.Y += (rotationMatrix[1][2] * point.Z);
-
-	out.Z += (rotationMatrix[2][0] * point.X);
-	out.Z += (rotationMatrix[2][1] * point.Y);
-	out.Z += (rotationMatrix[2][2] * point.Z);
 }

@@ -724,8 +724,7 @@ class AEnemyPawn : public AFSDPawn
 public:
 	PAD(0x8); // 0x2f8(0x08)
 	struct UEnemyHealthComponent* Health; // 0x300(0x08)
-	PAD(0x10); //struct UPawnStatsComponent* Stats; // 0x308(0x08)
-	//struct UEnemyPawnAfflictionComponent* Affliction; // 0x310(0x08)
+	PAD(0x10); // 0x308(0x08)
 	struct UEnemyComponent* enemy; // 0x318(0x08)
 	struct FName CenterMassSocketName; // 0x320(0x08)
 	PAD(0x20);
@@ -922,6 +921,35 @@ class AAnimatedItem : public AItem
 {
 public:
 	PAD(0x50);
+};
+
+// Class FSD.ExtractorItem
+// Size: 0x550 (Inherited: 0x390)
+class AExtractorItem : public AAnimatedItem 
+{
+public:
+	PAD(0xC4); // 0x390(0xC4)
+	float MovementPenalty; // 0x454(0x04)
+	float CarverRayCastLength; // 0x458(0x04)
+	float CarveTerrainDistanceCheck; // 0x45c(0x04)
+	float CurrentDrillSpeed; // 0x460(0x04)
+};
+
+// Class FSD.GrapplingHookGun
+// Size: 0x400 (Inherited: 0x390)
+class AGrapplingHookGun : public AAnimatedItem
+{
+public:
+	PAD(0x10); // 0x390(0x08)
+	float MaxDistance; // 0x3a0(0x04)
+	PAD(0x34); // 0x3a4(0x04)
+	float MaxSpeed; // 0x3d8(0x04)
+	float MaxSpeedReleaseModifier; // 0x3dc(0x04)
+	float WindUpTime; // 0x3e0(0x04)
+	bool AutoFire; // 0x3e4(0x01)
+	PAD(0x13); // 0x3e5(0x03)
+	float GrapleStartTime; // 0x3f8(0x04)
+	PAD(0x4); // 0x3fc(0x04)
 };
 
 // ScriptStruct FSD.RandRange
@@ -1575,8 +1603,6 @@ struct FHitResult {
 	struct FName MyBoneName; // 0x80(0x08)
 };
 
-extern UWorld* GWorld;
-
 class UKismetSystemLibrary
 {
 private:
@@ -1635,5 +1661,4 @@ extern TUObjectArray* ObjObjects;
 extern bool aimbotActive;
 
 bool EngineInit();
-void RotatePointOverAngles(FVector& point, FRotator& rotation, FVector& out);
 void rotate(FVector& point, FRotator& rotation, FVector& out);
