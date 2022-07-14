@@ -1259,7 +1259,7 @@ public:
 
 // Class Engine.SceneComponent
 // Size: 0x200 (Inherited: 0xb0)
-struct USceneComponent : public UActorComponent 
+class USceneComponent : public UActorComponent 
 {
 public:
 	PAD(0x6C); // 0xb0(0x6C)
@@ -1633,6 +1633,7 @@ extern UEngine** Engine;
 extern FNamePool* NamePoolData;
 extern TUObjectArray* ObjObjects;
 extern bool aimbotActive;
+extern bool boundingBoxActive;
 
 bool EngineInit();
 void RotatePointOverAngles(FVector& point, FRotator& rotation, FVector& out);

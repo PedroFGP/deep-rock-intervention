@@ -10,6 +10,7 @@ void ClearingThread()
 	{
 		if (GetAsyncKeyState(VK_END) & 1) { FreeLibraryAndExitThread(reinterpret_cast<HMODULE>(Dll), 0); }
 		if (GetAsyncKeyState(VK_F4) & 1) { aimbotActive = !aimbotActive; }
+		if (GetAsyncKeyState(VK_F5) & 1) { boundingBoxActive = !boundingBoxActive; }
 		Sleep(20);
 	}
 }

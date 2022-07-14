@@ -4,7 +4,8 @@ UEngine** Engine = nullptr;
 TUObjectArray* ObjObjects = nullptr;
 FNamePool* NamePoolData = nullptr;
 UWorld* GWorld = nullptr;
-extern bool aimbotActive = false;
+bool aimbotActive = false;
+bool boundingBoxActive = false;
 
 FMatrix FTransform::ToMatrixWithScale() const
 
@@ -131,18 +132,18 @@ bool EngineInit()
 
 void rotate(FVector& point, FRotator& rotation, FVector& out)
 {
-	rotation.Pitch = D2R(rotation.Roll);
-	rotation.Yaw = D2R(rotation.Yaw);
-	rotation.Roll = D2R(rotation.Roll);
+	float alpha = D2R(rotation.Pitch);
+	float beta = D2R(rotation.Yaw);
+	float gamma = D2R(rotation.Roll);
 
-	auto cosa = cos(rotation.Yaw);
-	auto sina = sin(rotation.Yaw);
+	auto cosa = cos(beta);
+	auto sina = sin(beta);
 
-	auto cosb = cos(rotation.Pitch);
-	auto sinb = sin(rotation.Pitch);
+	auto cosb = cos(alpha);
+	auto sinb = sin(alpha);
 
-	auto cosc = cos(rotation.Roll);
-	auto sinc = sin(rotation.Roll);
+	auto cosc = cos(gamma);
+	auto sinc = sin(gamma);
 
 	auto Axx = cosa * cosb;
 	auto Axy = cosa * sinb * sinc - sina * cosc;
@@ -163,9 +164,9 @@ void rotate(FVector& point, FRotator& rotation, FVector& out)
 
 void RotatePointOverAngles(FVector& point, FRotator& rotation, FVector& out)
 {
-	out.X = 0;
-	out.Y = 0;
-	out.Z = 0;
+	out.X = 0.0f;
+	out.Y = 0.0f;
+	out.Z = 0.0f;
 
 	rotation.Pitch = D2R(rotation.Pitch);
 	rotation.Yaw = D2R(rotation.Yaw);

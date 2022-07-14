@@ -29,6 +29,8 @@ void Draw2DBoundingBox(UCanvas* canvas, APlayerController* localController, AAct
 
 void Draw3DBoundingBox(UCanvas* canvas, APlayerController* localController, AActor* actor, FLinearColor color, FRotator rotation);
 
+void Draw3DBoundingBoxV2(UCanvas* canvas, APlayerController* localController, AActor* actor, FLinearColor color, FRotator rotation);
+
 void Aimbot(UObject* world, TArray<AActor*> actors, APlayerController* localController, FVector cameraLocation, FRotator cameraRotation, bool originBased = true);
 
 void DrawNames(UCanvas* canvas, APlayerController* localController, AActor* actor, UMinersManual* minerManual, FVector origin, FLinearColor color);
@@ -36,6 +38,8 @@ void DrawNames(UCanvas* canvas, APlayerController* localController, AActor* acto
 void DrawPlayerNames(UCanvas* canvas, APlayerController* localController, TArray<APlayerState*> players, APawn* localPawn);
 
 void RemoveRecoil(AItem* equippedItem);
+
+void AlterRateOfFire(AItem* equippedItem);
 
 void PostRenderHook(UGameViewportClient* viewport, UCanvas* canvas)
 {
@@ -50,7 +54,7 @@ void PostRenderHook(UGameViewportClient* viewport, UCanvas* canvas)
 		auto localController = localPlayer->PlayerController;
 		auto localCamera = localController->PlayerCameraManager;
 
-		if (localCamera)
+		if (localCamera && localController)
 		{
 			canvas->K2_DrawText(TitleFont, FString(L"Deep Rock Intervention"), titlePos, scale, color, false, shadow, { 2.f, 2.f }, false, false, true, outline);
 			canvas->K2_DrawText(TitleFont, FString(aimbotActive ? L"Aimbot: ON" : L"Aimbot: OFF"), targetRotationPos, scale, color, false, shadow, { 2.f, 2.f }, false, false, true, outline);
@@ -84,6 +88,7 @@ void PostRenderHook(UGameViewportClient* viewport, UCanvas* canvas)
 					auto equippedItem = localPlayerCharacter->GetEquippedItem();
 
 					RemoveRecoil(equippedItem);
+					AlterRateOfFire(equippedItem);
 
 					/*if (ammoDrivenWeapon->IsA(AWPN_AssaultRifle_C::StaticClass()))
 					{
@@ -126,7 +131,8 @@ void PostRenderHook(UGameViewportClient* viewport, UCanvas* canvas)
 
 							auto color = hit ? enemyColorInvis : enemyColorVisi;
 
-							Draw3DBoundingBox(canvas, localController, currentActor, color, enemy->Controller->ControlRotation);
+							if (boundingBoxActive)
+								Draw3DBoundingBoxV2(canvas, localController, currentActor, color, enemy->Controller->ControlRotation);
 
 							//DrawNames(canvas, localController, currentActor, minersManual, origin, color);
 						}
@@ -141,7 +147,7 @@ void PostRenderHook(UGameViewportClient* viewport, UCanvas* canvas)
 
 
 
-void Aimbot(UObject* world, TArray<AActor*> actors, APlayerController* localController, FVector cameraLocation, FRotator cameraRotation, bool originBased = true)
+void Aimbot(UObject* world, TArray<AActor*> actors, APlayerController* localController, FVector cameraLocation, FRotator cameraRotation, bool originBased)
 {
 	FVector aimPos, enemyOrigin, enemyExtends, closestPoint{ 0.0f, 0.0f, 0.0f };
 	FVector2D s1, closestScreenPoint{ 0.0f, 0.0f };
@@ -327,12 +333,12 @@ void Draw2DBoundingBox(UCanvas* canvas, APlayerController* localController, AAct
 	canvas->K2_DrawBox(finalPost, size, 2.0f, finalColor);
 }
 
+
 void Draw3DBoundingBox(UCanvas* canvas, APlayerController* localController, AActor* actor, FLinearColor color, FRotator rotation)
 {
 	FVector origin, extends;
 	actor->GetActorBounds(true, origin, extends, false);
-	const FVector location = actor->K2_GetActorLocation();
-
+	
 	FVector one = origin;
 	one.X -= extends.X;
 	one.Y -= extends.Y;
@@ -433,6 +439,106 @@ void Draw3DBoundingBox(UCanvas* canvas, APlayerController* localController, AAct
 	canvas->K2_DrawLine(s4, s8, 1.0f, color);
 }
 
+void Draw3DBoundingBoxV2(UCanvas* canvas, APlayerController* localController, AActor* actor, FLinearColor color, FRotator rotation)
+{
+	FVector origin, extends;
+	actor->GetActorBounds(true, origin, extends, false);
+
+	FVector one;
+	one.X -= extends.X;
+	one.Y -= extends.Y;
+	one.Z -= extends.Z;
+
+	FVector two;
+	two.X += extends.X;
+	two.Y -= extends.Y;
+	two.Z -= extends.Z;
+
+	FVector three;
+	three.X += extends.X;
+	three.Y += extends.Y;
+	three.Z -= extends.Z;
+
+	FVector four;
+	four.Y += extends.Y;
+	four.X -= extends.X;
+	four.Z -= extends.Z;
+
+	FVector five = one;
+	five.Z += extends.Z * 2;
+
+	FVector six = two;
+	six.Z += extends.Z * 2;
+
+	FVector seven = three;
+	seven.Z += extends.Z * 2;
+
+	FVector eight = four;
+	eight.Z += extends.Z * 2;
+
+	FVector oneR = one, twoR = two, threeR = three, fourR = four, fiveR = five, sixR = six, sevenR = seven, eightR = eight;
+
+	rotate(one, rotation, oneR);
+	rotate(two, rotation, twoR);
+	rotate(three, rotation, threeR);
+	rotate(four, rotation, fourR);
+	rotate(five, rotation, fiveR);
+	rotate(six, rotation, sixR);
+	rotate(seven, rotation, sevenR);
+	rotate(eight, rotation, eightR);
+
+	oneR = oneR + origin;
+	twoR = twoR + origin;
+	threeR = threeR + origin;
+	fourR = fourR + origin;
+	fiveR = fiveR + origin;
+	sixR = sixR + origin;
+	sevenR = sevenR + origin;
+	eightR = eightR + origin;
+
+	FVector2D s1, s2, s3, s4, s5, s6, s7, s8;
+	if (!localController->ProjectWorldLocationToScreen(oneR, s1, true))
+		return;
+
+	if (!localController->ProjectWorldLocationToScreen(twoR, s2, true))
+		return;
+
+	if (!localController->ProjectWorldLocationToScreen(threeR, s3, true))
+		return;
+
+	if (!localController->ProjectWorldLocationToScreen(fourR, s4, true))
+		return;
+
+	if (!localController->ProjectWorldLocationToScreen(fiveR, s5, true))
+		return;
+
+	if (!localController->ProjectWorldLocationToScreen(sixR, s6, true))
+		return;
+
+	if (!localController->ProjectWorldLocationToScreen(sevenR, s7, true))
+		return;
+
+	if (!localController->ProjectWorldLocationToScreen(eightR, s8, true))
+		return;
+
+	canvas->K2_DrawLine(s1, s2, 1.0f, color);
+	canvas->K2_DrawLine(s2, s3, 1.0f, color);
+	canvas->K2_DrawLine(s3, s4, 1.0f, color);
+	canvas->K2_DrawLine(s4, s1, 1.0f, color);
+
+	canvas->K2_DrawLine(s5, s6, 1.0f, color);
+	canvas->K2_DrawLine(s6, s7, 1.0f, color);
+	canvas->K2_DrawLine(s7, s8, 1.0f, color);
+	canvas->K2_DrawLine(s8, s5, 1.0f, color);
+
+	canvas->K2_DrawLine(s1, s5, 1.0f, color);
+	canvas->K2_DrawLine(s2, s6, 1.0f, color);
+	canvas->K2_DrawLine(s3, s7, 1.0f, color);
+	canvas->K2_DrawLine(s4, s8, 1.0f, color);
+}
+
+
+
 void DrawNames(UCanvas* canvas, APlayerController* localController, AActor* actor, UMinersManual* minerManual, FVector origin, FLinearColor color)
 {
 	auto enemy = (AEnemyDeepPathfinderCharacter*)actor;
@@ -475,7 +581,7 @@ void RemoveRecoil(AItem* equippedItem)
 		auto ammoDrivenWeapon = (AAmmoDrivenWeapon*)equippedItem;
 
 		if (ammoDrivenWeapon->ShotCost != 0)
-		{
+		{	
 			ammoDrivenWeapon->RecoilSettings.RecoilPitch.Max = 0.0f;
 			ammoDrivenWeapon->RecoilSettings.RecoilPitch.Min = 0.0f;
 			ammoDrivenWeapon->RecoilSettings.RecoilYaw.Max = 0.0f;
@@ -486,6 +592,22 @@ void RemoveRecoil(AItem* equippedItem)
 		}
 	}
 }
+
+void AlterRateOfFire(AItem* equippedItem)
+{
+	if (equippedItem && equippedItem->IsA(AAmmoDrivenWeapon::StaticClass()))
+	{
+		auto ammoDrivenWeapon = (AAmmoDrivenWeapon*)equippedItem;
+
+		static bool once = false;
+		if (!once)
+		{
+			ammoDrivenWeapon->RateOfFire = 2 * ammoDrivenWeapon->RateOfFire;
+			once = !once;
+		}
+	}
+}
+
 
 bool CheatInit()
 {
