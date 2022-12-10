@@ -26,16 +26,16 @@ So far the following has been achieved:
 - [x] Add support for aimbot [Commit](https://github.com/PedroFGP/deep-rock-intervention/commit/82b02ff167d24466dd07b03bdbaf963794fcc318)
 - [x] Add support for no recoil [Commit](https://github.com/PedroFGP/deep-rock-intervention/commit/82b02ff167d24466dd07b03bdbaf963794fcc318)
 - [x] Fix visibility check [Commit](https://github.com/PedroFGP/deep-rock-intervention/commit/82b02ff167d24466dd07b03bdbaf963794fcc318)
+- [x] Add basic menu for on/off features [Commit](https://github.com/PedroFGP/deep-rock-intervention/commit/17b307fd3f091c6747567444da0f6dc4b9d53d6f)
 
 **TODO:**
 
 - [ ] Add support for correct 2D box ESP (Extra Sensorial Perception)
 - [ ] Refactor code (split classes into individual files)
-- [ ] Add basic menu for on/off features
 
 ## Build & Use
 
-In order to build and use this project you need vcredists installed and C++ 17 support at least. To use this, set compilation for 64 bits and use a valid injector to inject into the game's process.
+In order to build and use this project you need vcredists installed and C++ 17 support at least. To use this, set compilation for 64 bits and use a valid injector to inject into the game's process (FSD-Win64-Shipping.exe).
 
 ## Reference Links
 
