@@ -1,5 +1,7 @@
 #pragma once
 #include "pch.h"
+#include <iomanip>
+#include <sstream>
 
 extern void** Address;
 extern struct UFont* Font;

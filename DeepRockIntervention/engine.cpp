@@ -3,7 +3,14 @@
 UEngine** Engine = nullptr;
 TUObjectArray* ObjObjects = nullptr;
 FNamePool* NamePoolData = nullptr;
-extern bool aimbotActive = false;
+bool aimbotActive = false;
+bool drawBonesActive = false;
+bool draw2DBoundingBoxActive = false;
+bool draw3DBoundingBoxActive = false;
+bool drawNamesActive = false;
+bool drawPlayerNamesActive = false;
+bool infiniteAmmoActive = false;
+bool removeRecoilActive = false;
 
 FMatrix FTransform::ToMatrixWithScale() const
 
@@ -87,6 +94,15 @@ std::string UObject::GetName() const
 	return Name.GetName();
 }
 
+std::wstring UObject::GetWName() const
+{
+	auto name = Name.GetName();
+
+	std::wstring wsTmp(name.begin(), name.end());
+
+	return wsTmp;
+}
+
 std::string UObject::GetFullName() const
 {
 	std::string name;
@@ -132,7 +148,7 @@ void rotate(FVector& point, FRotator& rotation, FVector& out)
 	out.Y = 0;
 	out.Z = 0;
 
-	FRotator rRotation {0.0f, 0.0f, 0.0f};
+	FRotator rRotation{ 0.0f, 0.0f, 0.0f };
 	rRotation.Pitch = D2R(rotation.Pitch);
 	rRotation.Yaw = D2R(rotation.Yaw);
 	rRotation.Roll = D2R(rotation.Roll);

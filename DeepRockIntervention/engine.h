@@ -278,6 +278,8 @@ public:
 
 	std::string GetName() const;
 
+	std::wstring GetWName() const;
+	
 	std::string GetFullName() const;
 
 	template<typename T>
@@ -293,6 +295,26 @@ public:
 			}
 
 			if (object->GetFullName() == name)
+			{
+				return static_cast<T*>(object);
+			}
+		}
+		return nullptr;
+	}
+
+	template<typename T>
+	static T* FindObject(int32_t internalIndex)
+	{
+		for (int i = 0; i < GObjects->NumElements; ++i)
+		{
+			auto object = GObjects->GetByIndex(i);
+
+			if (object == nullptr)
+			{
+				continue;
+			}
+
+			if (object->InternalIndex == internalIndex)
 			{
 				return static_cast<T*>(object);
 			}
@@ -603,6 +625,18 @@ public:
 		ProcessEvent(this, fn, &health);
 		return health;
 	}
+
+	static UClass* StaticClass()
+	{
+		static UClass* ptr = 0;
+
+		if (!ptr)
+		{
+			ptr = UObject::FindObject<UClass>("Class FSD.FSDPawn");
+		}
+
+		return ptr;
+	}
 };
 
 // Class Engine.ActorComponent
@@ -742,26 +776,6 @@ public:
 	}
 };
 
-// Class Engine.KismetTextLibrary
-// Size: 0x28 (Inherited: 0x28)
-class UKismetTextLibrary : public UObject
-{
-private:
-	static inline UClass* defaultObj;
-public:
-	static bool Init() {
-		return defaultObj = UObject::FindObject<UClass>("Class Engine.KismetTextLibrary");
-	}
-
-	FString Conv_TextToString(struct FText& InText)
-	{
-		static auto fn = UObject::FindObject<UObject>("Function Engine.KismetTextLibrary.Conv_TextToString");
-		FString string;
-		ProcessEvent(defaultObj, fn, &string);
-		return string;
-	}
-};
-
 // Class FSD.DeepPathfinderCharacter
 // Size: 0x388 (Inherited: 0x2f8)
 class ADeepPathfinderCharacter : public AFSDPawn 
@@ -792,14 +806,6 @@ public:
 
 		return ptr;
 	}
-};
-
-// Class FSD.AFlyingBug
-// Size: 0x428 (Inherited: 0x3a8)
-class AAFlyingBug : public AEnemyDeepPathfinderCharacter 
-{
-public:
-	struct UEnemyComponent* EnemyComponent; // 0x3a8(0x08)
 };
 
 // Class FSD.EnemyMinersManualData
@@ -1659,6 +1665,13 @@ extern UEngine** Engine;
 extern FNamePool* NamePoolData;
 extern TUObjectArray* ObjObjects;
 extern bool aimbotActive;
+extern bool drawBonesActive;
+extern bool draw2DBoundingBoxActive;
+extern bool draw3DBoundingBoxActive;
+extern bool drawPlayerNamesActive;
+extern bool infiniteAmmoActive;
+extern bool removeRecoilActive;
+extern bool drawNamesActive;
 
 bool EngineInit();
 void rotate(FVector& point, FRotator& rotation, FVector& out);

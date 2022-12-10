@@ -13,9 +13,14 @@ FLinearColor colorTexture{ 1.f, 1.f, 0.f, 1.f };
 FLinearColor shadow{ 0.f, 0.f, 0.f, 0.f };
 FLinearColor outline{ 0.f, 0.f, 0.f, 1.f };
 FVector2D titlePos{ 10.f, 10.f };
-FVector2D rotationPos{ 10.f, 25.f };
-FVector2D targetRotationPos{ 10.f, 40.f };
-FVector2D targetScalePos{ 10.f, 55.f };
+FVector2D hotkey1Pos{ 10.f, 25.f };
+FVector2D hotkey2Pos{ 10.f, 40.f };
+FVector2D hotkey3Pos{ 10.f, 55.f };
+FVector2D hotkey4Pos{ 10.f, 70.f };
+FVector2D hotkey5Pos{ 10.f, 85.f };
+FVector2D hotkey6Pos{ 10.f, 100.f };
+FVector2D hotkey7Pos{ 10.f, 115.f };
+FVector2D hotkey8Pos{ 10.f, 130.f };
 FVector ZeroVector3D{ 0.f, 0.f, 0.f };
 FVector origin, extends;
 
@@ -25,7 +30,11 @@ FLinearColor aimbotColor{ 0.f, 1.f, 0.f, 1.f };
 
 void DrawBones(UCanvas* canvas, APlayerController* localController, AEnemyDeepPathfinderCharacter* enemy);
 
-void Draw2DBoundingBox(UCanvas* canvas, APlayerController* localController, AActor* actor, FRotator rotation, bool isVisible);
+void DrawHitResult(UCanvas* canvas, APlayerController* localController, FHitResult* hitResult, FVector position);
+
+void DrawAddress(UCanvas* canvas, APlayerController* localController, DWORD64 address, FVector position);
+
+void Draw2DBoundingBox(UCanvas* canvas, APlayerController* localController, AActor* actor, bool isVisible);
 
 void Draw3DBoundingBox(UCanvas* canvas, APlayerController* localController, AActor* actor, FRotator rotation, FLinearColor color);
 
@@ -35,7 +44,11 @@ void DrawNames(UCanvas* canvas, APlayerController* localController, AActor* acto
 
 void DrawPlayerNames(UCanvas* canvas, APlayerController* localController, TArray<APlayerState*> players, APawn* localPawn);
 
+void InfiniteAmmo(AItem* equippedItem);
+
 void RemoveRecoil(AItem* equippedItem);
+
+void DrawHotkeys(UCanvas* canvas);
 
 void PostRenderHook(UGameViewportClient* viewport, UCanvas* canvas)
 {
@@ -52,20 +65,23 @@ void PostRenderHook(UGameViewportClient* viewport, UCanvas* canvas)
 
 		if (localCamera && localController)
 		{
-			canvas->K2_DrawText(TitleFont, FString(L"Deep Rock Intervention"), titlePos, scale, color, false, shadow, { 2.f, 2.f }, false, false, true, outline);
-			canvas->K2_DrawText(TitleFont, FString(aimbotActive ? L"Aimbot: ON" : L"Aimbot: OFF"), targetRotationPos, scale, color, false, shadow, { 2.f, 2.f }, false, false, true, outline);
-			auto rotation = localController->ControlRotation;
+			DrawHotkeys(canvas);
 
-			std::wstring rotationString = L"Pitch: ";
-			rotationString += std::to_wstring(rotation.Pitch);
-			rotationString += L" ,Yaw: ";
-			rotationString += std::to_wstring(rotation.Yaw);
-			rotationString += L" ,Roll: ";
-			rotationString += std::to_wstring(rotation.Roll);
-			canvas->K2_DrawText(TitleFont, FString(rotationString.c_str()), rotationPos, scale, color, false, shadow, scale, false, false, true, outline);
+			//auto rotation = localController->ControlRotation;
+
+			//std::wstring rotationString = L"Pitch: ";
+			//rotationString += std::to_wstring(rotation.Pitch);
+			//rotationString += L" ,Yaw: ";
+			//rotationString += std::to_wstring(rotation.Yaw);
+			//rotationString += L" ,Roll: ";
+			//rotationString += std::to_wstring(rotation.Roll);
+			//canvas->K2_DrawText(TitleFont, FString(rotationString.c_str()), rotationPos, scale, color, false, shadow, scale, false, false, true, outline);
 
 			auto localPawn = localController->K2_GetPawn();
 			auto players = state->PlayerArray;
+
+			if (drawPlayerNamesActive)
+				DrawPlayerNames(canvas, localController, players, localPawn);
 
 			if (localPawn && localPawn->IsA(APlayerCharacter::StaticClass()))
 			{
@@ -78,12 +94,16 @@ void PostRenderHook(UGameViewportClient* viewport, UCanvas* canvas)
 					auto const camera = localController->PlayerCameraManager;
 					auto cameraLoc = camera->GetCameraLocation();
 					auto cameraRot = camera->GetCameraRotation();
-					auto gameData = UGameFunctionLibrary::GetFSDGameData();
-					auto minersManual = gameData->MinersManual;
+					/*auto gameData = UGameFunctionLibrary::GetFSDGameData();
+					auto minersManual = gameData->MinersManual;*/
 
 					auto equippedItem = localPlayerCharacter->GetEquippedItem();
 
-					RemoveRecoil(equippedItem);
+					if (removeRecoilActive)
+						RemoveRecoil(equippedItem);
+
+					if (infiniteAmmoActive)
+						InfiniteAmmo(equippedItem);
 
 					if (aimbotActive)
 						Aimbot(world, level->Actors, localController, cameraLoc, cameraRot);
@@ -94,56 +114,41 @@ void PostRenderHook(UGameViewportClient* viewport, UCanvas* canvas)
 
 						if (currentActor)
 						{
-							if (currentActor->IsA(AEnemyDeepPathfinderCharacter::StaticClass()))
+							origin = currentActor->K2_GetActorLocation();
+
+							if (currentActor->IsA(AFSDPawn::StaticClass()))
 							{
-								auto enemy = (AEnemyDeepPathfinderCharacter*)currentActor;
+								auto fsdPawn = (AFSDPawn*)currentActor;
 
-								if (!enemy->HealthComponent->IsAlive())
-									continue;
+								auto healthComponent = fsdPawn->GetHealthComponent();
 
-								currentActor->GetActorBounds(true, origin, extends, false);
-
-								struct FHitResult hitResult;
-								memset(&hitResult, 0, sizeof(FHitResult));
-								auto hit = UKismetSystemLibrary::LineTraceSingle(world, cameraLoc, origin, hitResult);
-
-								auto color = hit ? enemyColorInvis : enemyColorVisi;
-
-								if (enemy->Controller)
-									//Draw3DBoundingBox(canvas, localController, currentActor, enemy->Controller->ControlRotation, color);
-									Draw2DBoundingBox(canvas, localController, currentActor, enemy->Controller->ControlRotation, !hit);
-
-								if (minersManual && enemy->SpawnedFromDescriptor)
+								if (healthComponent)
 								{
-									auto enemyName = minersManual->GetNameFromEnemyId(enemy->SpawnedFromDescriptor->EnemyID);
-									DrawNames(canvas, localController, currentActor, enemyName, origin, color);
-								}
-							}
+									if (!healthComponent->IsAlive())
+										continue;
 
-							if (currentActor->IsA(AEnemyPawn::StaticClass()))
-							{
-								auto enemyPawn = (AEnemyPawn*)currentActor;
+									//DrawAddress(canvas, localController, (DWORD64)fsdPawn, origin);
 
-								auto enemyPawnHealthComponent = enemyPawn->GetHealthComponent();
+									struct FHitResult hitResult;
+									memset(&hitResult, 0, sizeof(FHitResult));
+									auto hit = UKismetSystemLibrary::LineTraceSingle(world, cameraLoc, origin, hitResult);
 
-								if (enemyPawnHealthComponent && !enemyPawnHealthComponent->IsAlive())
-									continue;
+									auto color = hit ? enemyColorInvis : enemyColorVisi;
 
-								currentActor->GetActorBounds(true, origin, extends, false);
+									if (fsdPawn->Controller)
+									{
+										if (draw3DBoundingBoxActive)
+											Draw3DBoundingBox(canvas, localController, currentActor, fsdPawn->Controller->ControlRotation, color);
 
-								struct FHitResult hitResult;
-								memset(&hitResult, 0, sizeof(FHitResult));
-								auto hit = UKismetSystemLibrary::LineTraceSingle(world, cameraLoc, origin, hitResult);
+										if (draw2DBoundingBoxActive)
+											Draw2DBoundingBox(canvas, localController, currentActor, !hit);
+									}
 
-								auto color = hit ? enemyColorInvis : enemyColorVisi;
-
-								if(enemyPawn->Controller)
-									//Draw3DBoundingBox(canvas, localController, currentActor, enemyPawn->Controller->ControlRotation, color);
-									Draw2DBoundingBox(canvas, localController, currentActor, enemyPawn->Controller->ControlRotation, !hit);
-
-								if (enemyPawn->enemy && enemyPawn->enemy->InGameName)
-								{
-									DrawNames(canvas, localController, currentActor, enemyPawn->enemy->InGameName->Text, origin, color);
+									if (drawNamesActive)
+									{
+										auto enemyName = fsdPawn->GetWName();
+										DrawNames(canvas, localController, currentActor, FString(enemyName.c_str()), origin, color);
+									}
 								}
 							}
 						}
@@ -156,6 +161,21 @@ void PostRenderHook(UGameViewportClient* viewport, UCanvas* canvas)
 	PostRenderOriginal(viewport, canvas);
 }
 
+void DrawHotkeys(UCanvas* canvas)
+{
+	canvas->K2_DrawText(TitleFont, FString(L"Deep Rock Intervention"), titlePos, scale, color, false, shadow, { 2.f, 2.f }, false, false, true, outline);
+
+	canvas->K2_DrawText(TitleFont, FString(aimbotActive ? L"Aimbot: ON" : L"Aimbot: OFF"), hotkey1Pos, scale, color, false, shadow, { 2.f, 2.f }, false, false, true, outline);
+	canvas->K2_DrawText(TitleFont, FString(drawBonesActive ? L"Draw Bones: ON" : L"Draw Bones: OFF"), hotkey2Pos, scale, color, false, shadow, { 2.f, 2.f }, false, false, true, outline);
+	canvas->K2_DrawText(TitleFont, FString(draw2DBoundingBoxActive ? L"Draw 2D Boxes: ON" : L"Draw 2D Boxes: OFF"), hotkey3Pos, scale, color, false, shadow, { 2.f, 2.f }, false, false, true, outline);
+	canvas->K2_DrawText(TitleFont, FString(draw3DBoundingBoxActive ? L"Draw 3D Boxes: ON" : L"Draw 3D Boxes: OFF"), hotkey4Pos, scale, color, false, shadow, { 2.f, 2.f }, false, false, true, outline);
+	canvas->K2_DrawText(TitleFont, FString(drawPlayerNamesActive ? L"Draw Player Names: ON" : L"Draw Player Names: OFF"), hotkey5Pos, scale, color, false, shadow, { 2.f, 2.f }, false, false, true, outline);
+	canvas->K2_DrawText(TitleFont, FString(infiniteAmmoActive ? L"Infinite Ammo: ON" : L"Infinite Ammo: OFF"), hotkey6Pos, scale, color, false, shadow, { 2.f, 2.f }, false, false, true, outline);
+	canvas->K2_DrawText(TitleFont, FString(removeRecoilActive ? L"Remove Recoil: ON" : L"Remove Recoil: OFF"), hotkey7Pos, scale, color, false, shadow, { 2.f, 2.f }, false, false, true, outline);
+	canvas->K2_DrawText(TitleFont, FString(drawNamesActive ? L"Draw Names: ON" : L"Draw Names: OFF"), hotkey8Pos, scale, color, false, shadow, { 2.f, 2.f }, false, false, true, outline);
+}
+
+//F4
 void Aimbot(UObject* world, TArray<AActor*> actors, APlayerController* localController, FVector cameraLocation, FRotator cameraRotation, bool originBased)
 {
 	FVector aimPos, enemyOrigin, enemyExtends, closestPoint{ 0.0f, 0.0f, 0.0f };
@@ -171,53 +191,58 @@ void Aimbot(UObject* world, TArray<AActor*> actors, APlayerController* localCont
 		{
 			auto enemy = (AEnemyDeepPathfinderCharacter*)currentActor;
 
-			if (!enemy->HealthComponent->IsAlive())
-				continue;
+			auto healthComponent = enemy->GetHealthComponent();
 
-			if (originBased)
+			if (healthComponent)
 			{
-				currentActor->GetActorBounds(true, aimPos, enemyExtends, false);
-
-				struct FHitResult hitResult;
-				memset(&hitResult, 0, sizeof(FHitResult));
-				auto hit = UKismetSystemLibrary::LineTraceSingle(world, cameraLocation, aimPos, hitResult);
-
-				if (hit)
+				if (!healthComponent->IsAlive())
 					continue;
 
-				if (!localController->ProjectWorldLocationToScreen(aimPos, s1, true))
-					continue;
-
-				if (closestScreenPoint.DistTo(screenCenter) > s1.DistTo(screenCenter))
+				if (originBased)
 				{
-					closestPoint = aimPos;
-					closestScreenPoint = s1;
-				}
-			}
-			else
-			{
-				if (enemy->Mesh)
-				{
-					const FMatrix comp2world = enemy->Mesh->K2_GetComponentToWorld().ToMatrixWithScale();
+					currentActor->GetActorBounds(true, aimPos, enemyExtends, false);
 
-					for (auto i = 0; i < enemy->Mesh->CachedComponentSpaceTransforms.Size; i++)
+					struct FHitResult hitResult;
+					memset(&hitResult, 0, sizeof(FHitResult));
+					auto hit = UKismetSystemLibrary::LineTraceSingle(world, cameraLocation, aimPos, hitResult);
+
+					if (hit)
+						continue;
+
+					if (!localController->ProjectWorldLocationToScreen(aimPos, s1, true))
+						continue;
+
+					if (closestScreenPoint.DistTo(screenCenter) > s1.DistTo(screenCenter))
 					{
-						if (enemy->Mesh->GetBone(i, comp2world, aimPos))
+						closestPoint = aimPos;
+						closestScreenPoint = s1;
+					}
+				}
+				else
+				{
+					if (enemy->Mesh)
+					{
+						const FMatrix comp2world = enemy->Mesh->K2_GetComponentToWorld().ToMatrixWithScale();
+
+						for (auto i = 0; i < enemy->Mesh->CachedComponentSpaceTransforms.Size; i++)
 						{
-							struct FHitResult hitResult;
-							memset(&hitResult, 0, sizeof(FHitResult));
-							auto hit = UKismetSystemLibrary::LineTraceSingle(world, cameraLocation, aimPos, hitResult);
-
-							if (hit)
-								continue;
-
-							if (!localController->ProjectWorldLocationToScreen(aimPos, s1, true))
-								continue;
-
-							if (closestScreenPoint.DistTo(screenCenter) > s1.DistTo(screenCenter))
+							if (enemy->Mesh->GetBone(i, comp2world, aimPos))
 							{
-								closestPoint = aimPos;
-								closestScreenPoint = s1;
+								struct FHitResult hitResult;
+								memset(&hitResult, 0, sizeof(FHitResult));
+								auto hit = UKismetSystemLibrary::LineTraceSingle(world, cameraLocation, aimPos, hitResult);
+
+								if (hit)
+									continue;
+
+								if (!localController->ProjectWorldLocationToScreen(aimPos, s1, true))
+									continue;
+
+								if (closestScreenPoint.DistTo(screenCenter) > s1.DistTo(screenCenter))
+								{
+									closestPoint = aimPos;
+									closestScreenPoint = s1;
+								}
 							}
 						}
 					}
@@ -235,6 +260,7 @@ void Aimbot(UObject* world, TArray<AActor*> actors, APlayerController* localCont
 	}
 }
 
+//F5
 void DrawBones(UCanvas* canvas, APlayerController* localController, AEnemyDeepPathfinderCharacter* enemy)
 {
 	if (enemy->Mesh)
@@ -257,29 +283,58 @@ void DrawBones(UCanvas* canvas, APlayerController* localController, AEnemyDeepPa
 	}
 }
 
-void Draw2DBoundingBox(UCanvas* canvas, APlayerController* localController, AActor* actor, FRotator rotation, bool isVisible)
+
+void DrawHitResult(UCanvas* canvas, APlayerController* localController, FHitResult* hitResult, FVector position)
+{
+	FVector2D screen;
+	if (!localController->ProjectWorldLocationToScreen(position, screen, true))
+		return;
+
+	std::wstring hitResultString = L"PenetrationDepth: ";
+	hitResultString += std::to_wstring(hitResult->PenetrationDepth) + L", Time: ";
+	hitResultString += std::to_wstring(hitResult->Time) + L", Distance: ";
+	hitResultString += std::to_wstring(hitResult->Distance) + L", BoneName";
+	hitResultString += std::to_wstring(hitResult->FaceIndex);
+	canvas->K2_DrawText(TitleFont, FString(hitResultString.c_str()), screen, scale, color, false, shadow, scale, true, false, true, outline);
+}
+
+void DrawAddress(UCanvas* canvas, APlayerController* localController, DWORD64 address, FVector position)
+{
+	FVector2D screen;
+	if (!localController->ProjectWorldLocationToScreen(position, screen, true))
+		return;
+
+	std::wstring addressString = L"0x";
+	std::wostringstream oss;
+	oss << std::hex << address;
+	addressString += oss.str();
+	canvas->K2_DrawText(TitleFont, FString(addressString.c_str()), screen, scale, color, false, shadow, scale, true, false, true, outline);
+}
+
+//F6
+void Draw2DBoundingBox(UCanvas* canvas, APlayerController* localController, AActor* actor, bool isVisible)
 {
 	FVector origin, extends;
 	actor->GetActorBounds(true, origin, extends, false);
 
-	extends = extends * 0.8f;
+	extends = extends * 0.6f;
 
-	FVector one = ZeroVector3D;
+	FVector one = origin;
 	one.X -= extends.X;
 	one.Y -= extends.Y;
 	one.Z -= extends.Z;
 
-	FVector two = ZeroVector3D;
+	FVector two = origin;
 	two.X += extends.X;
 	two.Y -= extends.Y;
 	two.Z -= extends.Z;
 
-	FVector three = ZeroVector3D;
+	FVector three = origin;
 	three.X += extends.X;
 	three.Y += extends.Y;
 	three.Z -= extends.Z;
 
-	FVector four = ZeroVector3D;
+	FVector four = origin;
 	four.Y += extends.Y;
 	four.X -= extends.X;
 	four.Z -= extends.Z;
@@ -296,50 +351,30 @@ void Draw2DBoundingBox(UCanvas* canvas, APlayerController* localController, AAct
 	FVector eight = four;
 	eight.Z += extends.Z * 2;
 
-	FVector oneR = one, twoR = two, threeR = three, fourR = four, fiveR = five, sixR = six, sevenR = seven, eightR = eight;
-	rotate(one, rotation, oneR);
-	rotate(two, rotation, twoR);
-	rotate(three, rotation, threeR);
-	rotate(four, rotation, fourR);
-	rotate(five, rotation, fiveR);
-	rotate(six, rotation, sixR);
-	rotate(seven, rotation, sevenR);
-	rotate(eight, rotation, eightR);
-
-	oneR = oneR + origin;
-	twoR = twoR + origin;
-	threeR = threeR + origin;
-	fourR = fourR + origin;
-	fiveR = fiveR + origin;
-	sixR = sixR + origin;
-	sevenR = sevenR + origin;
-	eightR = eightR + origin;
-
 	FVector2D s1, s2, s3, s4, s5, s6, s7, s8;
-	if (!localController->ProjectWorldLocationToScreen(oneR, s1, true))
+	if (!localController->ProjectWorldLocationToScreen(one, s1, true))
 		return;
 
-	if (!localController->ProjectWorldLocationToScreen(twoR, s2, true))
+	if (!localController->ProjectWorldLocationToScreen(two, s2, true))
 		return;
 
-	if (!localController->ProjectWorldLocationToScreen(threeR, s3, true))
+	if (!localController->ProjectWorldLocationToScreen(three, s3, true))
 		return;
 
-	if (!localController->ProjectWorldLocationToScreen(fourR, s4, true))
+	if (!localController->ProjectWorldLocationToScreen(four, s4, true))
 		return;
 
-	if (!localController->ProjectWorldLocationToScreen(fiveR, s5, true))
+	if (!localController->ProjectWorldLocationToScreen(five, s5, true))
 		return;
 
-	if (!localController->ProjectWorldLocationToScreen(sixR, s6, true))
+	if (!localController->ProjectWorldLocationToScreen(six, s6, true))
 		return;
 
-	if (!localController->ProjectWorldLocationToScreen(sevenR, s7, true))
+	if (!localController->ProjectWorldLocationToScreen(seven, s7, true))
 		return;
 
-	if (!localController->ProjectWorldLocationToScreen(eightR, s8, true))
+	if (!localController->ProjectWorldLocationToScreen(eight, s8, true))
 		return;
-
 
 	float xArray[] = { s1.X, s2.X, s3.X, s4.X, s5.X, s6.X, s7.X, s8.X };
 	float yArray[] = { s1.Y, s2.Y, s3.Y, s4.Y, s5.Y, s6.Y, s7.Y, s8.Y };
@@ -358,16 +393,17 @@ void Draw2DBoundingBox(UCanvas* canvas, APlayerController* localController, AAct
 	auto finalPost = FVector2D(minX, minY);
 	auto size = FVector2D(maxX - minX, maxY - minY);
 
-	canvas->K2_DrawBox(finalPost, size, 2.0f, finalColor);
+	canvas->K2_DrawBox(finalPost, size, 1.0f, finalColor);
 }
 
+//F7
 void Draw3DBoundingBox(UCanvas* canvas, APlayerController* localController, AActor* actor, FRotator rotation, FLinearColor color)
 {
 	FVector origin, extends;
 	actor->GetActorBounds(true, origin, extends, false);
 
 	extends = extends * 0.8f;
-	
+
 	FVector one = ZeroVector3D;
 	one.X -= extends.X;
 	one.Y -= extends.Y;
@@ -469,6 +505,7 @@ void DrawNames(UCanvas* canvas, APlayerController* localController, AActor* acto
 	canvas->K2_DrawText(Font, name, screen, scale, color, false, shadow, scale, true, true, true, outline);
 }
 
+//F8
 void DrawPlayerNames(UCanvas* canvas, APlayerController* localController, TArray<APlayerState*> players, APawn* localPawn)
 {
 	for (auto i = 0; i < players.Count; i++)
@@ -488,37 +525,12 @@ void DrawPlayerNames(UCanvas* canvas, APlayerController* localController, TArray
 	}
 }
 
-void RemoveRecoil(AItem* equippedItem)
+//F9
+void InfiniteAmmo(AItem* equippedItem)
 {
 	if (equippedItem && equippedItem->IsA(AAmmoDrivenWeapon::StaticClass()))
 	{
 		auto ammoDrivenWeapon = (AAmmoDrivenWeapon*)equippedItem;
-
-		if (ammoDrivenWeapon->RecoilSettings.RecoilPitch.Max != 0)
-		{
-			ammoDrivenWeapon->RecoilSettings.RecoilPitch.Max = 0.0f;
-			ammoDrivenWeapon->RecoilSettings.RecoilPitch.Min = 0.0f;
-			ammoDrivenWeapon->RecoilSettings.RecoilYaw.Max = 0.0f;
-			ammoDrivenWeapon->RecoilSettings.RecoilYaw.Min = 0.0f;
-			ammoDrivenWeapon->RecoilSettings.RecoilRoll.Max = 0.0f;
-			ammoDrivenWeapon->RecoilSettings.RecoilRoll.Min = 0.0f;
-		}
-
-		//if (ammoDrivenWeapon->IsA(AWPN_AssaultRifle_C::StaticClass()))
-		//{
-		//	auto rifle = (AWPN_AssaultRifle_C*)ammoDrivenWeapon;
-
-		//	if (rifle->HitScan)
-		//	{
-		//		rifle->HitScan->SpreadPerShot = 0.0f;
-		//		rifle->HitScan->MaxSpread = 0.0f;
-		//		rifle->HitScan->MinSpread = 0.0f;
-		//		rifle->HitScan->VerticalSpreadMultiplier = 0.0f;
-		//		rifle->HitScan->MaxVerticalSpread = 0.0f;
-		//		rifle->HitScan->HorizontalSpredMultiplier = 0.0f;
-		//		rifle->HitScan->MaxHorizontalSpread = 0.0f;
-		//	}
-		//}
 
 		if (ammoDrivenWeapon->AmmoCount != ammoDrivenWeapon->MaxAmmo)
 		{
@@ -536,33 +548,25 @@ void RemoveRecoil(AItem* equippedItem)
 			ammoDrivenWeapon->ReloadDuration = 0.25f;
 		}
 	}
+}
 
-	//if (equippedItem && equippedItem->IsA(AGrapplingHookGun::StaticClass()))
-	//{
-	//	auto grapplingHookGun = (AGrapplingHookGun*)equippedItem;
+//F10
+void RemoveRecoil(AItem* equippedItem)
+{
+	if (equippedItem && equippedItem->IsA(AAmmoDrivenWeapon::StaticClass()))
+	{
+		auto ammoDrivenWeapon = (AAmmoDrivenWeapon*)equippedItem;
 
-	//	static bool once = false;
-
-	//	if (!once)
-	//	{
-	//		grapplingHookGun->MaxDistance = 99999.0f;
-	//		grapplingHookGun->MaxSpeed = 99999.0f;
-	//		once = true;
-	//	}
-	//}
-
-	//if (equippedItem && equippedItem->IsA(AExtractorItem::StaticClass()))
-	//{
-	//	auto extractorItem = (AExtractorItem*)equippedItem;
-
-	//	static bool once = false;
-
-	//	if (!once)
-	//	{
-	//		extractorItem->CurrentDrillSpeed = 400.0f;
-	//		once = true;
-	//	}
-	//}
+		if (ammoDrivenWeapon->RecoilSettings.RecoilPitch.Max != 0)
+		{
+			ammoDrivenWeapon->RecoilSettings.RecoilPitch.Max = 0.0f;
+			ammoDrivenWeapon->RecoilSettings.RecoilPitch.Min = 0.0f;
+			ammoDrivenWeapon->RecoilSettings.RecoilYaw.Max = 0.0f;
+			ammoDrivenWeapon->RecoilSettings.RecoilYaw.Min = 0.0f;
+			ammoDrivenWeapon->RecoilSettings.RecoilRoll.Max = 0.0f;
+			ammoDrivenWeapon->RecoilSettings.RecoilRoll.Min = 0.0f;
+		}
+	}
 }
 
 bool CheatInit()
@@ -583,8 +587,6 @@ bool CheatInit()
 	if (!vtable) return false;
 
 	UGameFunctionLibrary::Init();
-
-	UKismetTextLibrary::Init();
 
 	UKismetMathLibrary::Init();
 

@@ -10,6 +10,14 @@ void ClearingThread()
 	{
 		if (GetAsyncKeyState(VK_END) & 1) { FreeLibraryAndExitThread(reinterpret_cast<HMODULE>(Dll), 0); }
 		if (GetAsyncKeyState(VK_F4) & 1) { aimbotActive = !aimbotActive; }
+		if (GetAsyncKeyState(VK_F5) & 1) { drawBonesActive = !drawBonesActive; }
+		if (GetAsyncKeyState(VK_F6) & 1) { draw2DBoundingBoxActive = !draw2DBoundingBoxActive; }
+		if (GetAsyncKeyState(VK_F7) & 1) { draw3DBoundingBoxActive = !draw3DBoundingBoxActive; }
+		if (GetAsyncKeyState(VK_F8) & 1) { drawPlayerNamesActive = !drawPlayerNamesActive; }
+		if (GetAsyncKeyState(VK_F9) & 1) { infiniteAmmoActive = !infiniteAmmoActive; }
+		if (GetAsyncKeyState(VK_F10) & 1) { removeRecoilActive = !removeRecoilActive; }
+		if (GetAsyncKeyState(VK_F11) & 1) { drawNamesActive = !drawNamesActive; }
+
 		Sleep(20);
 	}
 }
