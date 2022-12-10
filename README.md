@@ -33,6 +33,14 @@ So far the following has been achieved:
 - [ ] Add support for correct 2D box ESP (Extra Sensorial Perception)
 - [ ] Refactor code (split classes into individual files)
 
+## Images
+
+![Menu](./Images/menu.jpg)
+
+![Players](./Images/other_players.jpg)
+
+![In-Game](./Images/in_game.jpg)
+
 ## Build & Use
 
 In order to build and use this project you need vcredists installed and C++ 17 support at least. To use this, set compilation for 64 bits and use a valid injector to inject into the game's process (FSD-Win64-Shipping.exe).
