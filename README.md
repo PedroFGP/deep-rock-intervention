@@ -35,7 +35,7 @@ So far the following has been achieved:
 
 ## Build & Use
 
-In order to build and use this project you need vcredists installed and C++ 17 support at least. To use this, set compilation for 64 bits and use a valid injector to inject into the game's process.
+In order to build and use this project you need vcredists installed and C++ 17 support at least. To use this, set compilation for 64 bits and use a valid injector to inject into the game's process (FSD-Win64-Shipping.exe).
 
 ## Reference Links
 
